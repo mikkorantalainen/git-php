@@ -27,8 +27,11 @@
 
     html_header();
 
+    html_breadcrumbs();
+
     if (isset($_GET['p']))  { 
         html_summary($_GET['p']);
+        html_browse($_GET['p']);
     }
     else
         html_home();
@@ -38,7 +41,47 @@
     function html_summary($proj)    {
         $repo = get_repo_path($proj);
         html_desc($repo);
-        html_shortlog($repo, 6);
+        if (!isset($_GET['t']) && !isset($_GET['b']))
+            html_shortlog($repo, 6);
+    }
+
+    function html_browse($proj)   {
+
+        if (isset($_GET['b']))
+            html_blob($proj, $_GET['b']);
+        else    {
+            if (isset($_GET['t']))
+                $tree = $_GET['t'];
+            else 
+                $tree = "HEAD";
+        }
+
+        html_tree($proj, $tree); 
+    }
+
+    function html_blob($proj, $blob)    {
+        $repo = get_repo_path($proj);
+        $out = array();
+        exec("GIT_DIR=$repo git-cat-file blob $blob", &$out);
+        foreach ($out as $line) {
+            highlight_string($line."\n");
+        }
+    }
+
+    function html_tree($proj, $tree)   {
+        $t = git_ls_tree(get_repo_path($proj), $tree);
+        echo "<table>\n";
+        foreach ($t as $obj)    {
+            $perm = perm_string($obj['perm']);
+
+            if ($obj['type'] == 'tree')
+                $objlink = "<a href=\"{$_SERVER['SCRIPT_NAME']}?p=$proj&t={$obj['hash']}\">{$obj['file']}</a>\n";
+            else if ($obj['type'] == 'blob')
+                $objlink = "<a href=\"{$_SERVER['SCRIPT_NAME']}?p=$proj&b={$obj['hash']}\">{$obj['file']}</a>\n";
+
+            echo "<tr><td>$perm</td><td>$objlink</td></tr>\n";
+        }
+        echo "</table>\n";
     }
 
     function html_shortlog($repo, $count)   {
@@ -137,13 +180,13 @@
     }
 
     function get_project_link($repo, $type = false)    {
-        $path = pathinfo($repo);
+        $path = basename($repo);
         if (!$type)
-            return "<a href=\"{$_SERVER['SCRIPT_NAME']}?p={$path['basename']}\">$repo</a>";
+            return "<a href=\"{$_SERVER['SCRIPT_NAME']}?p=$path\">$path</a>";
         else if ($type == "targz")
-            return "<a href=\"{$_SERVER['SCRIPT_NAME']}?p={$path['basename']}&dl=targz\">.tar.gz</a>";
+            return "<a href=\"{$_SERVER['SCRIPT_NAME']}?p=$path&dl=targz\">.tar.gz</a>";
         else if ($type == "zip")
-            return "<a href=\"{$_SERVER['SCRIPT_NAME']}?p={$path['basename']}&dl=zip\">.zip</a>";
+            return "<a href=\"{$_SERVER['SCRIPT_NAME']}?p=$path&dl=zip\">.zip</a>";
     }
 
     function git_commit($repo, $cid)  {
@@ -178,15 +221,34 @@
         global $repos;
     
         foreach ($repos as $repo)   {
-            $path = pathinfo($repo);
-            if ($path['basename'] == $proj)
+            $path = basename($repo);
+            if ($path == $proj)
                 return $repo;
         }
     }
 
+    function git_ls_tree($repo, $tree) {
+        $ary = array();
+            
+        $out = array();
+        //Have to strip the \t between hash and file
+        exec("GIT_DIR=$repo git-ls-tree $tree | sed -e 's/\t/ /g'", &$out);
+
+        foreach ($out as $line) {
+            $entry = array();
+            $arr = explode(" ", $line);
+            $entry['perm'] = $arr[0];
+            $entry['type'] = $arr[1];
+            $entry['hash'] = $arr[2];
+            $entry['file'] = $arr[3];
+            $ary[] = $entry;
+        }
+        return $ary;
+    }
+
     function write_targz($repo) {
-        $p = pathinfo($repo);
-        $proj = explode(".", $p['basename']);
+        $p = basename($repo);
+        $proj = explode(".", $p);
         $proj = $proj[0]; 
         exec("cd /tmp && git-clone $repo && rm -Rf /tmp/$proj/.git && tar czvf $proj.tar.gz $proj && rm -Rf /tmp/$proj");
         
@@ -204,8 +266,8 @@
     }
 
     function write_zip($repo) {
-        $p = pathinfo($repo);
-        $proj = explode(".", $p['basename']);
+        $p = basename($repo);
+        $proj = explode(".", $p);
         $proj = $proj[0]; 
         exec("cd /tmp && git-clone $repo && rm -Rf /tmp/$proj/.git && zip -r $proj.zip $proj && rm -Rf /tmp/$proj");
         
@@ -220,6 +282,38 @@
         header("Content-Disposition: attachment; filename=\"$proj.zip\";" );
         echo file_get_contents("/tmp/$proj.zip");
         die();
+    }
+
+    function perm_string($perms)    {
+
+        //This sucks
+        switch ($perms) {
+            case '040000':
+                return 'drwxr-xr-x';
+            case '100644':
+                return '-rw-r--r--';
+            case '100755':
+                return '-rwxr-xr-x';
+            case '120000':
+                return 'lrwxrwxrwx';
+
+            default:
+                return '----------';
+        }
+    }
+
+    function html_breadcrumbs()  {
+        $crumb = "<a href=\"{$_SERVER['SCRIPT_NAME']}\">projects</a> / ";
+
+        if (isset($_GET['p']))
+            $crumb .= "<a href=\"{$_SERVER['SCRIPT_NAME']}?p={$_GET['p']}\">{$_GET['p']}</a> / ";
+        
+        if (isset($_GET['b']))
+            $crumb .= "blob";
+
+        if (isset($_GET['t']))
+            $crumb .= "tree";
+        echo $crumb;
     }
 
     function zpr ($arr) {
