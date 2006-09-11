@@ -27,6 +27,8 @@
             write_zip(get_repo_path($_GET['p']));
         else if ($_GET['dl'] == 'git_logo')
             write_git_logo();
+        else if ($_GET['dl'] == 'plain')
+            write_plain();
 
     if (!$embed)
         html_header();
@@ -95,14 +97,16 @@
         echo "<div class=\"gitbrowse\">\n";
         echo "<table>\n";
         foreach ($t as $obj)    {
+            $plain = "";
             $perm = perm_string($obj['perm']);
-
             if ($obj['type'] == 'tree')
                 $objlink = "<a href=\"{$_SERVER['SCRIPT_NAME']}?p=$proj&t={$obj['hash']}\">{$obj['file']}</a>\n";
-            else if ($obj['type'] == 'blob')
+            else if ($obj['type'] == 'blob')    {
+                $plain = "<a href=\"{$_SERVER['SCRIPT_NAME']}?p=$proj&dl=plain&h={$obj['hash']}\">plain</a>";
                 $objlink = "<a class=\"blob\" href=\"{$_SERVER['SCRIPT_NAME']}?p=$proj&b={$obj['hash']}\">{$obj['file']}</a>\n";
+            }
 
-            echo "<tr><td>$perm</td><td>$objlink</td></tr>\n";
+            echo "<tr><td>$perm</td><td>$objlink</td><td>$plain</td></tr>\n";
         }
         echo "</table>\n";
         echo "</div>\n";
@@ -301,6 +305,15 @@
             $ary[] = $entry;
         }
         return $ary;
+    }
+
+    function write_plain()  {
+        $repo = get_repo_path($_GET['p']);
+        $hash = $_GET['h'];
+        header("Content-Type: text/plain");
+        $str = system("GIT_DIR=$repo git-cat-file blob $hash");
+        echo $str;
+        die();
     }
 
     function write_targz($repo) {
