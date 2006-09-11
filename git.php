@@ -32,7 +32,9 @@
     html_breadcrumbs();
 
     if (isset($_GET['p']))  { 
+        html_spacer();
         html_summary($_GET['p']);
+        html_spacer();
         if ($_GET['a'] == "commitdiff")
             html_diff($_GET['p'], $_GET['h'], $_GET['hb']);
         else
@@ -82,6 +84,8 @@
 
     function html_tree($proj, $tree)   {
         $t = git_ls_tree(get_repo_path($proj), $tree);
+
+        echo "<div class=\"gitbrowse\">\n";
         echo "<table>\n";
         foreach ($t as $obj)    {
             $perm = perm_string($obj['perm']);
@@ -89,18 +93,19 @@
             if ($obj['type'] == 'tree')
                 $objlink = "<a href=\"{$_SERVER['SCRIPT_NAME']}?p=$proj&t={$obj['hash']}\">{$obj['file']}</a>\n";
             else if ($obj['type'] == 'blob')
-                $objlink = "<a href=\"{$_SERVER['SCRIPT_NAME']}?p=$proj&b={$obj['hash']}\">{$obj['file']}</a>\n";
+                $objlink = "<a class=\"blob\" href=\"{$_SERVER['SCRIPT_NAME']}?p=$proj&b={$obj['hash']}\">{$obj['file']}</a>\n";
 
             echo "<tr><td>$perm</td><td>$objlink</td></tr>\n";
         }
         echo "</table>\n";
+        echo "</div>\n";
     }
 
     function html_shortlog($repo, $count)   {
         echo "<table>\n";
         $c = git_commit($repo, "HEAD");
         for ($i = 0; $i < $count && $c; $i++)  {
-            $date = date("D m/d/Y G:i", $c['date']);
+            $date = date("D n/j/y G:i", $c['date']);
             $cid = $c['commit_id'];
             $pid = $c['parent'];
             $diff = "<a href=\"{$_SERVER['SCRIPT_NAME']}?p={$_GET['p']}&a=commitdiff&h=$cid&hb=$pid\">commitdiff</a>";
@@ -148,12 +153,18 @@
         echo "<head>\n";
         echo "\t<title>$title</title>\n";
         echo "\t<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\"/>\n";
+        if (file_exists("style.css"))
+            echo "<link rel=\"stylesheet\" href=\"style.css\" type=\"text/css\" />\n";
+        else
+            html_style();
         echo "</head>\n";
         echo "<body>\n";
+        echo "<div id=\"gitbody\">\n";
         
     }
 
     function html_footer()  {
+        echo "</div>\n";
         echo "</body>\n";
         echo "</html>\n";
     }
@@ -191,7 +202,7 @@
     function get_last($repo)    {
         $out = array();
         $date = exec("GIT_DIR=$repo git-rev-list  --header --max-count=1 HEAD | grep -a committer | cut -f5-6 -d' '", &$out);
-        return date("D m/d/y G:i", $date);
+        return date("D n/j/y G:i", $date);
     }
 
     function get_project_link($repo, $type = false)    {
@@ -336,7 +347,12 @@
         return $short;
     }
 
+    function html_spacer($text = "&nbsp;")  {
+        echo "<div class=\"gitspacer\">$text</div>\n";
+    }
+
     function html_breadcrumbs()  {
+        echo "<div id=\"githead\">\n";
         $crumb = "<a href=\"{$_SERVER['SCRIPT_NAME']}\">projects</a> / ";
 
         if (isset($_GET['p']))
@@ -352,6 +368,7 @@
             $crumb .= 'commitdiff';
 
         echo $crumb;
+        echo "</div>\n";
     }
 
     function zpr ($arr) {
@@ -407,4 +424,50 @@
         return $code;
     }
 
+    function html_style()   {
+        echo "<style type=\"text/css\">\n";
+        echo <<< EOF
+            #gitbody    {
+                margin: 10px 10px 10px 10px;
+                border-style: solid;
+                border-width: 1px;
+                border-color: gray;
+                font-family: sans-serif;
+                font-size: 12px;
+            }
+
+            #githead    {
+                margin: 0px 0px 0px 0px;
+                padding: 10px 10px 10px 10px;
+                background-color: #d9d8d1;
+            }
+
+            #gitbody th {
+                text-align: left;
+                padding: 0px 0px 0px 7px;
+            }
+
+            #gitbody td {
+                padding: 0px 0px 0px 7px;
+            }
+
+            #gitbody table  {
+                cellspacing
+            }
+
+            tr:hover { background-color:#edece6; }
+
+            div.gitbrowse a.blob {
+                text-decoration: none;
+                color: #000000;
+            }
+
+            div.gitbrowse a.blob:hover {
+                text-decoration: underline;
+            }
+            a.gitbrowse:hover { text-decoration:underline; color:#880000; }
+EOF;
+
+        echo "</style>\n";
+    }
 ?>
