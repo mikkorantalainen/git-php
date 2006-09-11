@@ -25,6 +25,8 @@
             write_targz(get_repo_path($_GET['p']));
         else if ($_GET['dl'] == 'zip')
             write_zip(get_repo_path($_GET['p']));
+        else if ($_GET['dl'] == 'git_logo')
+            write_git_logo();
 
     if (!$embed)
         html_header();
@@ -33,15 +35,20 @@
 
     if (isset($_GET['p']))  { 
         html_spacer();
+        html_title("Summary");
         html_summary($_GET['p']);
         html_spacer();
         if ($_GET['a'] == "commitdiff")
             html_diff($_GET['p'], $_GET['h'], $_GET['hb']);
-        else
+        else    {
+            html_title("Files");
             html_browse($_GET['p']);
+        }
     }
-    else
+    else    {
+        html_spacer();
         html_home();
+    }
 
     if (!$embed)
         html_footer();
@@ -163,7 +170,31 @@
         
     }
 
+    function write_git_logo()   {
+
+        $git = "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a\x00\x00\x00\x0d\x49\x48\x44\x52" .
+        "\x00\x00\x00\x48\x00\x00\x00\x1b\x04\x03\x00\x00\x00\x2d\xd9\xd4" .
+        "\x2d\x00\x00\x00\x18\x50\x4c\x54\x45\xff\xff\xff\x60\x60\x5d\xb0" .
+        "\xaf\xaa\x00\x80\x00\xce\xcd\xc7\xc0\x00\x00\xe8\xe8\xe6\xf7\xf7" .
+        "\xf6\x95\x0c\xa7\x47\x00\x00\x00\x73\x49\x44\x41\x54\x28\xcf\x63" .
+        "\x48\x67\x20\x04\x4a\x5c\x18\x0a\x08\x2a\x62\x53\x61\x20\x02\x08" .
+        "\x0d\x69\x45\xac\xa1\xa1\x01\x30\x0c\x93\x60\x36\x26\x52\x91\xb1" .
+        "\x01\x11\xd6\xe1\x55\x64\x6c\x6c\xcc\x6c\x6c\x0c\xa2\x0c\x70\x2a" .
+        "\x62\x06\x2a\xc1\x62\x1d\xb3\x01\x02\x53\xa4\x08\xe8\x00\x03\x18" .
+        "\x26\x56\x11\xd4\xe1\x20\x97\x1b\xe0\xb4\x0e\x35\x24\x71\x29\x82" .
+        "\x99\x30\xb8\x93\x0a\x11\xb9\x45\x88\xc1\x8d\xa0\xa2\x44\x21\x06" .
+        "\x27\x41\x82\x40\x85\xc1\x45\x89\x20\x70\x01\x00\xa4\x3d\x21\xc5" .
+        "\x12\x1c\x9a\xfe\x00\x00\x00\x00\x49\x45\x4e\x44\xae\x42\x60\x82";
+        
+        header("Content-Type: img/png");
+        header("Expires: +1d");
+        echo $git;
+        die();
+    }
+
     function html_footer()  {
+        echo "<div class=\"gitfooter\"><a href=\"http://www.kernel.org/pub/software/scm/git/docs/\"" . 
+             "<img src=\"{$_SERVER['SCRIPT_NAME']}?dl=git_logo\" style=\"border-width: 0px;\"/></a></div>\n";
         echo "</div>\n";
         echo "</body>\n";
         echo "</html>\n";
@@ -351,6 +382,10 @@
         echo "<div class=\"gitspacer\">$text</div>\n";
     }
 
+    function html_title($text = "&nbsp;")  {
+        echo "<div class=\"gittitle\">$text</div>\n";
+    }
+
     function html_breadcrumbs()  {
         echo "<div id=\"githead\">\n";
         $crumb = "<a href=\"{$_SERVER['SCRIPT_NAME']}\">projects</a> / ";
@@ -451,15 +486,28 @@
                 padding: 0px 0px 0px 7px;
             }
 
-            #gitbody table  {
-                cellspacing
-            }
-
             tr:hover { background-color:#edece6; }
 
             div.gitbrowse a.blob {
                 text-decoration: none;
                 color: #000000;
+            }
+
+            div.gitspacer   {
+                padding: 1px 0px 0px 0px;
+                background-color: #FFFFFF;
+            }
+
+            div.gitfooter {
+                padding: 7px 2px 2px 2px;
+                background-color: #d9d8d1;
+                text-align: right;
+            }
+
+            div.gittitle   {
+                padding: 7px 7px 7px 7px;
+                background-color: #d9d8d1;
+                font-weight: bold;
             }
 
             div.gitbrowse a.blob:hover {
