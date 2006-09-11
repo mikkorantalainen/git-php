@@ -2,6 +2,7 @@
 
     global $title;
     global $repos;
+    $embed = false;
     $title  = "git";
     $repo_index = "index.aux";
 
@@ -25,18 +26,23 @@
         else if ($_GET['dl'] == 'zip')
             write_zip(get_repo_path($_GET['p']));
 
-    html_header();
+    if (!$embed)
+        html_header();
 
     html_breadcrumbs();
 
     if (isset($_GET['p']))  { 
         html_summary($_GET['p']);
-        html_browse($_GET['p']);
+        if ($_GET['a'] == "commitdiff")
+            html_diff($_GET['p'], $_GET['h'], $_GET['hb']);
+        else
+            html_browse($_GET['p']);
     }
     else
         html_home();
 
-    html_footer();
+    if (!$embed)
+        html_footer();
 
     function html_summary($proj)    {
         $repo = get_repo_path($proj);
@@ -63,9 +69,15 @@
         $repo = get_repo_path($proj);
         $out = array();
         exec("GIT_DIR=$repo git-cat-file blob $blob", &$out);
-        foreach ($out as $line) {
-            highlight_string($line."\n");
-        }
+        echo highlight_code(implode("\n",$out));
+            //highlight_string(implode("\n",$out));
+    }
+
+    function html_diff($proj, $commit, $parent)    {
+        $repo = get_repo_path($proj);
+        $out = array();
+        exec("GIT_DIR=$repo git-diff $parent $commit", &$out);
+        echo highlight_code(implode("\n",$out));
     }
 
     function html_tree($proj, $tree)   {
@@ -89,7 +101,10 @@
         $c = git_commit($repo, "HEAD");
         for ($i = 0; $i < $count && $c; $i++)  {
             $date = date("D m/d/Y G:i", $c['date']);
-            echo "<tr><td>$date</td><td>{$c['author']}</td><td>{$c['message']}</td></tr>\n"; 
+            $cid = $c['commit_id'];
+            $pid = $c['parent'];
+            $diff = "<a href=\"{$_SERVER['SCRIPT_NAME']}?p={$_GET['p']}&a=commitdiff&h=$cid&hb=$pid\">commitdiff</a>";
+            echo "<tr><td>$date</td><td>{$c['author']}</td><td>{$c['message']}</td><td>$diff</td></tr>\n"; 
             $c = git_commit($repo, $c["parent"]);
         }
         echo "</table>\n";
@@ -114,7 +129,7 @@
         echo "<table>\n";
         echo "<tr><th>Project</th><th>Description</th><th>Owner</th><th>Last Changed</th><th>Download</th></tr>\n";
         foreach ($repos as $repo)   {
-            $desc = file_get_contents("$repo/description"); 
+            $desc = short_desc(file_get_contents("$repo/description")); 
             $owner = get_file_owner($repo);
             $last =  get_last($repo);
             $proj = get_project_link($repo);
@@ -302,6 +317,25 @@
         }
     }
 
+    function short_desc($desc)  {
+        $trunc = false;
+        $short = "";
+        $d = explode(" ", $desc);
+        foreach ($d as $str)    {
+            if (strlen($short) < 25)
+                $short .= "$str ";
+            else    {
+                $trunc = true;
+                break;
+            }
+        }
+
+        if ($trunc)
+            $short .= "...";
+
+        return $short;
+    }
+
     function html_breadcrumbs()  {
         $crumb = "<a href=\"{$_SERVER['SCRIPT_NAME']}\">projects</a> / ";
 
@@ -313,10 +347,64 @@
 
         if (isset($_GET['t']))
             $crumb .= "tree";
+
+        if ($_GET['a'] == 'commitdiff')
+            $crumb .= 'commitdiff';
+
         echo $crumb;
     }
 
     function zpr ($arr) {
         print "<pre>" .print_r($arr, true). "</pre>";
     }
+
+    function highlight_code($code) {
+
+        define(COLOR_DEFAULT, '000');
+        define(COLOR_FUNCTION, '00b'); //also for variables, numbers and constants
+        define(COLOR_KEYWORD, '070');
+        define(COLOR_COMMENT, '800080');
+        define(COLOR_STRING, 'd00');
+
+        // Check it if code starts with PHP tags, if not: add 'em.
+        if(substr($code, 0, 2) != '<?') {
+            $code = "<?\n".$code."\n?>";
+            $add_tags = true;
+        }
+        
+        $code = highlight_string($code, true);
+
+        // Remove the first "<code>" tag from "$code" (if any)
+        if(substr($code, 0, 6) == '<code>') {
+           $code = substr($code, 6, (strlen($code) - 13));
+        }
+
+        // Replacement-map to replace deprecated "<font>" tag with "<span>"
+        $xhtml_convmap = array(
+           '<font' => '<span',
+           '</font>' => '</span>',
+           'color="' => 'style="color:',
+           '<br />' => '<br/>',
+           '#000000">' => '#'.COLOR_DEFAULT.'">',
+           '#0000BB">' => '#'.COLOR_FUNCTION.'">',
+           '#007700">' => '#'.COLOR_KEYWORD.'">',
+           '#FF8000">' => '#'.COLOR_COMMENT.'">',
+           '#DD0000">' => '#'.COLOR_STRING.'">'
+        );
+
+        // Replace "<font>" tags with "<span>" tags, to generate a valid XHTML code
+        $code = strtr($code, $xhtml_convmap);
+
+        //strip default color (black) tags
+        $code = substr($code, 25, (strlen($code) -33));
+
+        //strip the PHP tags if they were added by the script
+        if($add_tags) {
+            
+            $code = substr($code, 0, 26).substr($code, 36, (strlen($code) - 74));
+        }
+
+        return $code;
+    }
+
 ?>
