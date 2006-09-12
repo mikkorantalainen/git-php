@@ -80,7 +80,9 @@
         $repo = get_repo_path($proj);
         $out = array();
         exec("GIT_DIR=$repo git-cat-file blob $blob", &$out);
+        echo "<div class=\"gitcode\">\n";
         echo highlight_code(implode("\n",$out));
+        echo "</div>\n";
             //highlight_string(implode("\n",$out));
     }
 
@@ -213,7 +215,6 @@
         $out = array();
         $command = "GIT_DIR=$gitdir git-ls-tree --name-only $tree";
         exec($command, &$out);
-        var_dump($out);
     }
 
     function get_git($repo) {
@@ -504,6 +505,10 @@
             div.gitbrowse a.blob {
                 text-decoration: none;
                 color: #000000;
+            }
+
+            div.gitcode {
+                padding: 10px;
             }
 
             div.gitspacer   {
