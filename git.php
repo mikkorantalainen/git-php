@@ -1,8 +1,36 @@
 <?php
 
+/* vim: set expandtab tabstop=4 shiftwidth=4 foldmethod=marker: */
+// +------------------------------------------------------------------------+
+// | git-php - PHP front end to git repositories                            |
+// +------------------------------------------------------------------------+
+// | Copyright (c) 2006 Zack Bartel                                         |
+// +------------------------------------------------------------------------+
+// | This program is free software; you can redistribute it and/or          |
+// | modify it under the terms of the GNU General Public License            |
+// | as published by the Free Software Foundation; either version 2         |
+// | of the License, or (at your option) any later version.                 |
+// |                                                                        |
+// | This program is distributed in the hope that it will be useful,        |
+// | but WITHOUT ANY WARRANTY; without even the implied warranty of         |
+// | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the          |
+// | GNU General Public License for more details.                           |
+// |                                                                        |
+// | You should have received a copy of the GNU General Public License      |
+// | along with this program; if not, write to the Free Software            |
+// | Foundation, Inc., 59 Temple Place - Suite 330,                         |
+// | Boston, MA  02111-1307, USA.                                           |
+// +------------------------------------------------------------------------+
+// | Author: Zack Bartel <zack@bartel.com>                                  |
+// +------------------------------------------------------------------------+ 
+
     global $title;
     global $repos;
-    $embed = false;
+    global $git_embed;
+
+    if (!isset($git_embed))
+        $git_embed = true;
+
     $title  = "git";
     $repo_index = "index.aux";
 
@@ -30,8 +58,9 @@
         else if ($_GET['dl'] == 'plain')
             write_plain();
 
-    if (!$embed)
-        html_header();
+    html_header();
+
+    html_style();
 
     html_breadcrumbs();
 
@@ -52,8 +81,7 @@
         html_home();
     }
 
-    if (!$embed)
-        html_footer();
+    html_footer();
 
     function html_summary($proj)    {
         $repo = get_repo_path($proj);
@@ -79,6 +107,8 @@
     function html_blob($proj, $blob)    {
         $repo = get_repo_path($proj);
         $out = array();
+        $plain = "<a href=\"{$_SERVER['SCRIPT_NAME']}?p=$proj&dl=plain&h=$blob\">plain</a>";
+        echo "<div style=\"float:right;padding:7px;\">$plain</div>\n";
         exec("GIT_DIR=$repo git-cat-file blob $blob", &$out);
         echo "<div class=\"gitcode\">\n";
         echo highlight_code(implode("\n",$out));
@@ -160,18 +190,17 @@
 
     function html_header()  {
         global $title;
+        global $git_embed;
         
-        echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n";
-        echo "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\n";
-        echo "<head>\n";
-        echo "\t<title>$title</title>\n";
-        echo "\t<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\"/>\n";
-        if (file_exists("style.css"))
-            echo "<link rel=\"stylesheet\" href=\"style.css\" type=\"text/css\" />\n";
-        else
-            html_style();
-        echo "</head>\n";
-        echo "<body>\n";
+        if (!$git_embed)    {
+            echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n";
+            echo "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\n";
+            echo "<head>\n";
+            echo "\t<title>$title</title>\n";
+            echo "\t<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\"/>\n";
+            echo "</head>\n";
+            echo "<body>\n";
+        }
         echo "<div id=\"gitbody\">\n";
         
     }
@@ -199,11 +228,21 @@
     }
 
     function html_footer()  {
-        echo "<div class=\"gitfooter\"><a href=\"http://www.kernel.org/pub/software/scm/git/docs/\"" . 
-             "<img src=\"{$_SERVER['SCRIPT_NAME']}?dl=git_logo\" style=\"border-width: 0px;\"/></a></div>\n";
+        global $git_embed;
+
+        echo "<div class=\"gitfooter\">\n";
+
+        if (!$git_embed)    {
+            echo "<a href=\"http://www.kernel.org/pub/software/scm/git/docs/\"" . 
+                 "<img src=\"{$_SERVER['SCRIPT_NAME']}?dl=git_logo\" style=\"border-width: 0px;\"/></a>\n";
+        }
+
         echo "</div>\n";
-        echo "</body>\n";
-        echo "</html>\n";
+        echo "</div>\n";
+        if (!$git_embed)    {
+            echo "</body>\n";
+            echo "</html>\n";
+        }
     }
 
     function git_tree_head($gitdir) {
@@ -401,7 +440,7 @@
     }
 
     function html_breadcrumbs()  {
-        echo "<div id=\"githead\">\n";
+        echo "<div class=\"githead\">\n";
         $crumb = "<a href=\"{$_SERVER['SCRIPT_NAME']}\">projects</a> / ";
 
         if (isset($_GET['p']))
@@ -474,6 +513,14 @@
     }
 
     function html_style()   {
+        global $git_embed;
+        
+        if (file_exists("style.css"))
+            echo "<link rel=\"stylesheet\" href=\"style.css\" type=\"text/css\" />\n";
+        if ($git_embed)
+            return;
+
+        else    {
         echo "<style type=\"text/css\">\n";
         echo <<< EOF
             #gitbody    {
@@ -485,7 +532,7 @@
                 font-size: 12px;
             }
 
-            #githead    {
+            div.githead    {
                 margin: 0px 0px 0px 0px;
                 padding: 10px 10px 10px 10px;
                 background-color: #d9d8d1;
@@ -535,5 +582,6 @@
 EOF;
 
         echo "</style>\n";
+        }
     }
 ?>
