@@ -28,25 +28,31 @@
     global $repos;
     global $git_embed;
 
-    if (!isset($git_embed))
-        $git_embed = true;
-
     $title  = "git";
     $repo_index = "index.aux";
 
-    //$repos = file($repo_index);
-    $repos = array(
-        "/home/zack/scm/bartel.git",
-        "/home/zack/scm/rpminfo.git",
-        "/home/zack/scm/linux.git",
-        "/home/zack/scm/cnas.git",
-        "/home/zack/scm/cnas-sm.git",
-        "/home/zack/scm/cnas-logos.git",
-        "/home/zack/scm/cnas-release.git",
-        "/home/zack/scm/cnas-aimsim.git",
-        "/home/zack/scm/git-php.git",
-        "/home/zack/scm/gobot.git",
-    );
+    if (file_exists($repo_index))   {
+        $repos = array();
+        $r = file($repo_index);
+        foreach ($r as $repo)
+            $repos[] = trim($repo);
+    }
+    else    
+        $repos = array(
+            "/home/zack/scm/bartel.git",
+            "/home/zack/scm/rpminfo.git",
+            "/home/zack/scm/linux.git",
+            "/home/zack/scm/cnas.git",
+            "/home/zack/scm/cnas-sm.git",
+            "/home/zack/scm/cnas-logos.git",
+            "/home/zack/scm/cnas-release.git",
+            "/home/zack/scm/cnas-aimsim.git",
+            "/home/zack/scm/git-php.git",
+            "/home/zack/scm/gobot.git",
+        );
+
+    if (!isset($git_embed) && $git_embed != true)
+        $git_embed = false;
 
     if (isset($_GET['dl']))
         if ($_GET['dl'] == 'targz') 
