@@ -31,8 +31,11 @@
     $title  = "git";
     $repo_index = "index.aux";
 
-    if (file_exists($repo_index))   {
+    //repos could be made by an embeder script
+    if (!is_array($repos))
         $repos = array();
+
+    if (file_exists($repo_index))   {
         $r = file($repo_index);
         foreach ($r as $repo)
             $repos[] = trim($repo);
@@ -63,6 +66,8 @@
             write_git_logo();
         else if ($_GET['dl'] == 'plain')
             write_plain();
+        else if ($_GET['dl'] == 'rss2')
+            write_rss2();
 
     html_header();
 
@@ -397,6 +402,48 @@
         header("Content-Length: " . $filesize);
         header("Content-Disposition: attachment; filename=\"$proj.zip\";" );
         echo file_get_contents("/tmp/$proj.zip");
+        die();
+    }
+
+    function write_rss2()   {
+        $proj = $_GET['p'];
+        $repo = get_repo_path($proj);
+        $link = "http://{$_SERVER['HTTP_HOST']}{$_SERVER['SCRIPT_NAME']}?p=$proj";
+        header("Content-type: text/xml", true);
+        
+        echo '<?xml version="1.0" encoding="UTF-8"?>';
+        ?>
+        <rss version="2.0"
+        xmlns:content="http://purl.org/rss/1.0/modules/content/"
+        xmlns:wfw="http://wellformedweb.org/CommentAPI/"
+        xmlns:dc="http://purl.org/dc/elements/1.1/"
+        >
+
+       
+        <channel>
+            <title><?php echo $proj ?></title>
+            <link><?php echo $link ?></link>
+            <description><?php echo $proj ?></description>
+            <pubDate>Sat, 26 Aug 2006 20:33:59 +0000</pubDate>
+            <generator>http://code.google.com/p/git-php/</generator>
+            <language>en</language>
+            <?php $c = git_commit($repo, "HEAD");
+                 for ($i = 0; $i < 10 && $c; $i++):?>
+            <item>
+                <title><?php echo $c['message']?></title>
+                <link><?php echo $link?></link>
+                <pubDate>Thu, 27 Jul 2006 05:14:09 +0000</pubDate>
+                <guid isPermaLink="false"><?php echo $link ?></guid>
+                <description><?php echo $c['message'] ?></description>
+                <content><?php echo $c['message'] ?></content>
+            </item>
+            <?php $c = git_commit($repo, $c['parent']);
+                  endfor;
+            ?>
+            }
+        </channel>
+        </rss>
+        <?php
         die();
     }
 
