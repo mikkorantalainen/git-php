@@ -42,17 +42,17 @@
     }
     else    
         $repos = array(
-            "/home/zack/scm/tftp-ephemeral.patch",
             "/home/zack/scm/bartel.git",
             "/home/zack/scm/rpminfo.git",
-            "/home/zack/scm/linux.git",
-            "/home/zack/scm/cnas.git",
-            "/home/zack/scm/cnas-sm.git",
-            "/home/zack/scm/cnas-logos.git",
-            "/home/zack/scm/cnas-release.git",
-            "/home/zack/scm/cnas-aimsim.git",
+/*             "/home/zack/scm/cnas.git", */
+/*             "/home/zack/scm/cnas-sm.git", */
+/*             "/home/zack/scm/cnas-logos.git", */
+/*             "/home/zack/scm/cnas-release.git", */
+/*             "/home/zack/scm/cnas-aimsim.git", */
+            "/home/zack/scm/tftp-hpa.git",
             "/home/zack/scm/git-php.git",
             "/home/zack/scm/gobot.git",
+            "/home/zack/scm/hello-servlet.git",
         );
 
     if (!isset($git_embed) && $git_embed != true)
@@ -292,7 +292,7 @@
     function get_last($repo)    {
         $out = array();
         $date = exec("GIT_DIR=$repo git-rev-list  --header --max-count=1 HEAD | grep -a committer | cut -f5-6 -d' '", &$out);
-        return date("D n/j/y G:i", $date);
+        return date("D n/j/y G:i", (int)$date);
     }
 
     function get_project_link($repo, $type = false)    {
