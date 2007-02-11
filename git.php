@@ -24,6 +24,7 @@
 // | Author: Zack Bartel <zack@bartel.com>                                  |
 // +------------------------------------------------------------------------+ 
 
+sanitized_url();
     global $title;
     global $repos;
     global $git_embed;
@@ -373,6 +374,30 @@
         return $ary;
     }
 
+    /* TODO: cache this */
+    function sanitized_url()    {
+        global $git_embed;
+
+        /* the sanitized url */
+        $url = "{$_SERVER['SCRIPT_NAME']}?";
+
+        if (!$git_embed)    {
+            return $url;
+        }
+
+        /* the GET vars used by git-php */
+        $git_get = array('p', 'dl', 'b', 'a', 'h');
+
+
+        foreach ($_GET as $var => $val) {
+            if (!in_array($var, $git_get))   {
+                $get[$var] = $val;
+                $url.="$var=$val&";
+            }
+        }
+        return $url;
+    }
+
     function write_plain()  {
         $repo = get_repo_path($_GET['p']);
         $hash = $_GET['h'];
@@ -517,6 +542,7 @@
         if (isset($_GET['b']))
             $crumb .= "blob";
 
+        /* TODO: Is this used? */
         if (isset($_GET['t']))
             $crumb .= "tree";
 
