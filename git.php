@@ -24,10 +24,17 @@
 // | Author: Zack Bartel <zack@bartel.com>                                  |
 // +------------------------------------------------------------------------+ 
 
-sanitized_url();
     global $title;
     global $repos;
     global $git_embed;
+    global $git_css;
+    global $git_logo;
+
+    /* Add the default css */
+    $git_css = true;
+
+    /* Add the git logo in the footer */
+    $git_logo = true;
 
     $title  = "git";
     $repo_index = "index.aux";
@@ -45,6 +52,7 @@ sanitized_url();
         if ($handle = opendir($repo_directory)) {
             while (false !== ($file = readdir($handle))) {
                 if ($file != "." && $file != "..") {
+                    /* TODO: Check for valid git repos */
                     $repos[] = trim($repo_directory . $file);
                 }
             }
@@ -131,7 +139,7 @@ sanitized_url();
     function html_blob($proj, $blob)    {
         $repo = get_repo_path($proj);
         $out = array();
-        $plain = "<a href=\"{$_SERVER['SCRIPT_NAME']}?p=$proj&dl=plain&h=$blob\">plain</a>";
+        $plain = "<a href=\"".sanitized_url()."p=$proj&dl=plain&h=$blob\">plain</a>";
         echo "<div style=\"float:right;padding:7px;\">$plain</div>\n";
         exec("GIT_DIR=$repo git-cat-file blob $blob", &$out);
         echo "<div class=\"gitcode\">\n";
@@ -158,10 +166,10 @@ sanitized_url();
             $plain = "";
             $perm = perm_string($obj['perm']);
             if ($obj['type'] == 'tree')
-                $objlink = "<a href=\"{$_SERVER['SCRIPT_NAME']}?p=$proj&t={$obj['hash']}\">{$obj['file']}</a>\n";
+                $objlink = "<a href=\"".sanitized_url()."p=$proj&t={$obj['hash']}\">{$obj['file']}</a>\n";
             else if ($obj['type'] == 'blob')    {
-                $plain = "<a href=\"{$_SERVER['SCRIPT_NAME']}?p=$proj&dl=plain&h={$obj['hash']}\">plain</a>";
-                $objlink = "<a class=\"blob\" href=\"{$_SERVER['SCRIPT_NAME']}?p=$proj&b={$obj['hash']}\">{$obj['file']}</a>\n";
+                $plain = "<a href=\"".sanitized_url()."p=$proj&dl=plain&h={$obj['hash']}\">plain</a>";
+                $objlink = "<a class=\"blob\" href=\"".sanitized_url()."p=$proj&b={$obj['hash']}\">{$obj['file']}</a>\n";
             }
 
             echo "<tr><td>$perm</td><td>$objlink</td><td>$plain</td></tr>\n";
@@ -178,7 +186,7 @@ sanitized_url();
             $cid = $c['commit_id'];
             $pid = $c['parent'];
             $mess = short_desc($c['message'], 110);
-            $diff = "<a href=\"{$_SERVER['SCRIPT_NAME']}?p={$_GET['p']}&a=commitdiff&h=$cid&hb=$pid\">commitdiff</a>";
+            $diff = "<a href=\"".sanitized_url()."p={$_GET['p']}&a=commitdiff&h=$cid&hb=$pid\">commitdiff</a>";
             echo "<tr><td>$date</td><td>{$c['author']}</td><td>$mess</td><td>$diff</td></tr>\n"; 
             $c = git_commit($repo, $c["parent"]);
         }
@@ -256,12 +264,13 @@ sanitized_url();
 
     function html_footer()  {
         global $git_embed;
+        global $git_logo;
 
         echo "<div class=\"gitfooter\">\n";
 
-        if (!$git_embed)    {
+        if ($git_logo)    {
             echo "<a href=\"http://www.kernel.org/pub/software/scm/git/docs/\"" . 
-                 "<img src=\"{$_SERVER['SCRIPT_NAME']}?dl=git_logo\" style=\"border-width: 0px;\"/></a>\n";
+                 "<img src=\"".sanitized_url()."dl=git_logo\" style=\"border-width: 0px;\"/></a>\n";
         }
 
         echo "</div>\n";
@@ -310,11 +319,11 @@ sanitized_url();
     function get_project_link($repo, $type = false)    {
         $path = basename($repo);
         if (!$type)
-            return "<a href=\"{$_SERVER['SCRIPT_NAME']}?p=$path\">$path</a>";
+            return "<a href=\"".sanitized_url()."p=$path\">$path</a>";
         else if ($type == "targz")
-            return "<a href=\"{$_SERVER['SCRIPT_NAME']}?p=$path&dl=targz\">.tar.gz</a>";
+            return "<a href=\"".sanitized_url()."p=$path&dl=targz\">.tar.gz</a>";
         else if ($type == "zip")
-            return "<a href=\"{$_SERVER['SCRIPT_NAME']}?p=$path&dl=zip\">.zip</a>";
+            return "<a href=\"".sanitized_url()."p=$path&dl=zip\">.zip</a>";
     }
 
     function git_commit($repo, $cid)  {
@@ -448,7 +457,7 @@ sanitized_url();
     function write_rss2()   {
         $proj = $_GET['p'];
         $repo = get_repo_path($proj);
-        $link = "http://{$_SERVER['HTTP_HOST']}{$_SERVER['SCRIPT_NAME']}?p=$proj";
+        $link = "http://{$_SERVER['HTTP_HOST']}".sanitized_url()."p=$proj";
         header("Content-type: text/xml", true);
         
         echo '<?xml version="1.0" encoding="UTF-8"?>';
@@ -534,10 +543,10 @@ sanitized_url();
 
     function html_breadcrumbs()  {
         echo "<div class=\"githead\">\n";
-        $crumb = "<a href=\"{$_SERVER['SCRIPT_NAME']}\">projects</a> / ";
+        $crumb = "<a href=\"".sanitized_url()."\">projects</a> / ";
 
         if (isset($_GET['p']))
-            $crumb .= "<a href=\"{$_SERVER['SCRIPT_NAME']}?p={$_GET['p']}\">{$_GET['p']}</a> / ";
+            $crumb .= "<a href=\"".sanitized_url()."p={$_GET['p']}\">{$_GET['p']}</a> / ";
         
         if (isset($_GET['b']))
             $crumb .= "blob";
@@ -607,11 +616,11 @@ sanitized_url();
     }
 
     function html_style()   {
-        global $git_embed;
+        global $git_css;
         
         if (file_exists("style.css"))
             echo "<link rel=\"stylesheet\" href=\"style.css\" type=\"text/css\" />\n";
-        if ($git_embed)
+        if (!$git_css)
             return;
 
         else    {
