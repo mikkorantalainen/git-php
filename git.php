@@ -40,6 +40,16 @@
         foreach ($r as $repo)
             $repos[] = trim($repo);
     }
+    else if((file_exists($repo_directory)) && (is_dir($repo_directory))){
+        if ($handle = opendir($repo_directory)) {
+            while (false !== ($file = readdir($handle))) {
+                if ($file != "." && $file != "..") {
+                    $repos[] = trim($repo_directory . $file);
+                }
+            }
+            closedir($handle);
+        } 
+    }
     else    
         $repos = array(
             "/home/zack/scm/bartel.git",
@@ -51,6 +61,7 @@
 /*             "/home/zack/scm/cnas-aimsim.git", */
             "/home/zack/scm/tftp-hpa.git",
             "/home/zack/scm/git-php.git",
+            "/home/zack/scm/git-drupal.git",
             "/home/zack/scm/gobot.git",
             "/home/zack/scm/hello-servlet.git",
         );
