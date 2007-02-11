@@ -131,9 +131,9 @@
                 $tree = $_GET['t'];
             else 
                 $tree = "HEAD";
+             html_tree($proj, $tree); 
         }
 
-        html_tree($proj, $tree); 
     }
 
     function html_blob($proj, $blob)    {
