@@ -29,6 +29,8 @@
     global $git_embed;
     global $git_css;
     global $git_logo;
+    global $http_method_prefix;
+    global $communication_link;
 
     /* Add the default css */
     $git_css = true;
@@ -38,6 +40,12 @@
 
     $title  = "git";
     $repo_index = "index.aux";
+    $repo_directory = "/home/peeter/public_html/git/";
+    $http_method_prefix = "http://people.proekspert.ee/peeter/git/";
+    $communication_link = "http://people.proekspert.ee/peeter/blog";
+
+    //if git is not installed into standard path, we need to set the path
+    putenv( "PATH=/home/peeter/local/bin:/opt/j2sdk1.4/bin:/usr/local/bin:/usr/bin:/bin:/usr/bin/X11:/usr/games" );
 
     //repos could be made by an embeder script
     if (!is_array($repos))
@@ -51,7 +59,7 @@
     else if((file_exists($repo_directory)) && (is_dir($repo_directory))){
         if ($handle = opendir($repo_directory)) {
             while (false !== ($file = readdir($handle))) {
-                if ($file != "." && $file != "..") {
+                if ($file != "." && $file != ".." && (is_dir($file))) {
                     /* TODO: Check for valid git repos */
                     $repos[] = trim($repo_directory . $file);
                 }
@@ -61,20 +69,20 @@
     }
     else    
         $repos = array(
-            "/home/zack/scm/bartel.git",
-            "/home/zack/scm/rpminfo.git",
+//            "/home/peeter/public_html/git/fiekassaraha.git",
+/*            "/home/zack/scm/rpminfo.git",
             "/home/zack/scm/libshell.git",
-/*             "/home/zack/scm/cnas.git", */
-/*             "/home/zack/scm/cnas-sm.git", */
-/*             "/home/zack/scm/cnas-logos.git", */
-/*             "/home/zack/scm/cnas-release.git", */
-/*             "/home/zack/scm/cnas-aimsim.git", */
+             "/home/zack/scm/cnas.git", 
+             "/home/zack/scm/cnas-sm.git", 
+             "/home/zack/scm/cnas-logos.git",
+             "/home/zack/scm/cnas-release.git", 
+             "/home/zack/scm/cnas-aimsim.git", 
             "/home/zack/scm/tftp-hpa.git",
             "/home/zack/scm/git-php.git",
             "/home/zack/scm/git-drupal.git",
             "/home/zack/scm/gobot.git",
             "/home/zack/scm/hello-servlet.git",
-        );
+*/        );
 
     sort($repos);
 
@@ -116,6 +124,14 @@
         html_home();
     }
 
+    html_title("Help");
+    if ( isset($_GET['p'])) {
+        html_help($_GET['p']);
+    }
+    else {
+        html_help("projectname.git ");
+    }
+
     html_footer();
 
     function html_summary($proj)    {
@@ -139,6 +155,17 @@
 
     }
 
+    function html_help($proj)    {
+        global $http_method_prefix;
+        global $communication_link;
+        echo "<table>\n";
+        echo "<tr><td>To clone: </td><td>git clone ";
+            echo "$http_method_prefix";
+            echo "$proj yourpath</td></tr>\n";
+        echo "<tr><td>To communicate: </td><td><a href=$communication_link>Visit this page</a></td></tr>";
+        echo "</table>\n";
+    }
+
     function html_blob($proj, $blob)    {
         $repo = get_repo_path($proj);
         $out = array();
@@ -148,7 +175,7 @@
         echo "<div class=\"gitcode\">\n";
         //echo highlight(implode("\n", $out));
         //echo highlight_code(implode("\n",$out));
-         highlight_string(implode("\n",$out));
+        echo highlight_string(implode("\n",$out));
         echo "</div>\n";
     }
 
@@ -157,7 +184,8 @@
         $out = array();
         exec("GIT_DIR=$repo git-diff $parent $commit", &$out);
         echo "<div class=\"gitcode\">\n";
-        echo highlight_code(implode("\n",$out));
+        //echo highlight_code(implode("\n",$out));
+        echo highlight_string(implode("\n",$out));
         echo "</div>\n";
     }
 
@@ -365,8 +393,9 @@
         $commit["date"] = "{$g[++$i]} {$g[++$i]}";
         $commit["message"] = "";
         $size = count($out);
-        for (; $i < $size-1; $i++)
-            $commit["message"] .= $out[$i];
+        for (; $i < $size; $i++)
+            if( strlen( $commit["message"] ) == 0 )
+                $commit["message"] .= $out[$i];
         return $commit;
     }
 
