@@ -25,12 +25,14 @@
 // +------------------------------------------------------------------------+ 
 
     global $title;
-    global $repos;
+    global $repos; // list of repositories
+	global $validargs; // list of allowed arguments
     global $git_embed;
     global $git_css;
     global $git_logo;
-    global $http_method_prefix;
-    global $communication_link;
+    global $http_method_prefix; // prefix path for http clone method
+    global $communication_link; // link for sending a message to owner
+	global $failedarg;
 
     /* Add the default css */
     $git_css = true;
@@ -47,20 +49,27 @@
     //if git is not installed into standard path, we need to set the path
     putenv( "PATH=/home/peeter/local/bin:/opt/j2sdk1.4/bin:/usr/local/bin:/usr/bin:/bin:/usr/bin/X11:/usr/games" );
 
+	// end of server configuration
+	//-------------------------------------------------
+
     //repos could be made by an embeder script
     if (!is_array($repos))
         $repos = array();
 
-    if (file_exists($repo_index))   {
-        $r = file($repo_index);
-        foreach ($r as $repo)
-            $repos[] = trim($repo);
-    }
-    else if((file_exists($repo_directory)) && (is_dir($repo_directory))){
-        if ($handle = opendir($repo_directory)) {
-            while (false !== ($file = readdir($handle))) {
-                if ($file != "." && $file != ".." && (is_dir($file))) {
+	if(!is_array($validargs))
+		$validargs = array();
+
+	if((file_exists($repo_directory)) && (is_dir($repo_directory)))
+	{
+        if ($handle = opendir($repo_directory)) 
+		{
+            while (false !== ($file = readdir($handle))) 
+			{
+                if ($file != "." && $file != ".." && (is_dir($file))) 
+				{
                     /* TODO: Check for valid git repos */
+					// fill the security array.
+					$validargs[] = trim($file);
                     $repos[] = trim($repo_directory . $file);
                 }
             }
@@ -68,23 +77,55 @@
         } 
     }
     else    
-        $repos = array(
-//            "/home/peeter/public_html/git/fiekassaraha.git",
-/*            "/home/zack/scm/rpminfo.git",
-            "/home/zack/scm/libshell.git",
-             "/home/zack/scm/cnas.git", 
-             "/home/zack/scm/cnas-sm.git", 
-             "/home/zack/scm/cnas-logos.git",
-             "/home/zack/scm/cnas-release.git", 
-             "/home/zack/scm/cnas-aimsim.git", 
-            "/home/zack/scm/tftp-hpa.git",
-            "/home/zack/scm/git-php.git",
-            "/home/zack/scm/git-drupal.git",
-            "/home/zack/scm/gobot.git",
-            "/home/zack/scm/hello-servlet.git",
-*/        );
+    {
+		header("Content-Type: text/plain");
+		echo "Error: no repositories found!";
+		die();
+	}
 
     sort($repos);
+
+	// security test the arguments
+	if( isset($_GET['p']) )
+	{
+		// check for valid repository name
+		if( !is_valid($_GET['p']) )
+			hacker_gaught();
+		// now load the repository into validargs
+		$repo=$_GET['p'];
+		$out=array();
+        exec("GIT_DIR=$repo git-ls-tree -r -t HEAD | sed -e 's/\t/ /g'", &$out);
+        foreach ($out as $line) 
+		{
+            $arr = explode(" ", $line);
+            $validargs[] = $arr[2]; // add the hash to valid array
+            $validargs[] = basename($arr[3]); // add the file name to valid array
+        }		
+		// add commit tags
+		$c = git_commit($repo, "HEAD");
+		while( $c )
+		{
+			$validargs[] = $c['commit_id'];
+			$validargs[] = $c['parent'];
+            $c = git_commit($repo, $c['parent']);
+        }
+	}
+
+
+	// add some keywords to valid array
+	$validargs = array_merge( $validargs, array( 
+		"targz", "zip", "git_logo", "plain", "rss2",
+		"commitdiff" 
+	));
+
+	// now, all arguments must be in validargs
+	foreach( $_GET as $value )
+	{
+		if( !is_valid($value) )
+			hacker_gaught();
+	}
+
+	// end of validity check
 
 $extEnscript = array
 (
@@ -207,6 +248,31 @@ $extEnscript = array
     }
 
     html_footer();
+
+	// this function checks if a token is valid argument
+	function is_valid($token)
+	{
+		global $validargs, $failedarg;
+		foreach($validargs as $va)
+		{
+			if( $va == $token )
+				return true;
+		}
+		$failedarg = $token;
+		return false;
+	}
+
+	function hacker_gaught()
+	{
+		global $failedarg, $validargs;
+		header("Content-Type: text/plain");
+		echo "please, do not attack.\n";
+		echo "this site is not your enemy.\n\n";
+		echo "the failed argument is $failedarg.\n\n";
+		foreach( $validargs as $va )
+			echo "$va\n";
+		die();
+	}
 
     function html_summary($proj)    {
         $repo = get_repo_path($proj);
