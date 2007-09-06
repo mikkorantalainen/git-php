@@ -88,6 +88,7 @@
 
 $extEnscript = array
 (
+//  '.svg'     => 'sml',
   '.ada'     => 'ada',
   '.adb'     => 'ada',
   '.ads'     => 'ada',
@@ -248,36 +249,41 @@ $extEnscript = array
         $ext=@$extEnscript[strrchr($name,".")];
         echo "<div style=\"float:right;padding:7px;\">$plain</div>\n";
         //echo "$ext";
-        if( $ext == "php" || $ext == "" )
+        echo "<div class=\"gitcode\">\n";
+        if( $ext == "" )
         {
             //echo "nonhighlight!";
             $cmd="GIT_DIR=$repo git-cat-file blob $blob";
             exec( $cmd, &$out );
-            $out = implode("\n",$out);
-            $out = highlight_string( $out );
+            $out = "<PRE>".htmlspecialchars(implode("\n",$out))."</PRE>";
+            echo "$out";
+            //$out = highlight_string( $out );
+        }
+        else if( $ext == "php" )
+        {
+            $cmd="GIT_DIR=$repo git-cat-file blob $blob";
+            exec( $cmd, &$out );
+            //$out = "<PRE>".htmlspecialchars(implode("\n",$out))."</PRE>";
+            highlight_string( implode("\n",$out) );
         }
         else
         {
             //echo "highlight";
             $result=0;
-            $cmd="GIT_DIR=$repo git-cat-file blob $blob | enscript --language=html --color=1 --pretty-print=$ext -o - | sed -n \"/<PRE/,/<\\/PRE/p\" ";
+            $cmd="GIT_DIR=$repo git-cat-file blob $blob | enscript --language=html --color=1 --highlight=$ext -o - | sed -n \"/<PRE/,/<\\/PRE/p\" ";
             exec("$cmd", &$out);
             $out = implode("\n",$out);
+            echo "$out";
         }
-        echo "<div class=\"gitcode\">\n";
-        //echo "$ext";
-        echo "$out";
-        
         echo "</div>\n";
     }
 
     function html_diff($proj, $commit, $parent)    {
         $repo = get_repo_path($proj);
         $out = array();
-        exec("GIT_DIR=$repo git-diff $parent $commit", &$out);
+        exec("GIT_DIR=$repo git-diff $parent $commit | enscript --language=html --color=1 --highlight=diffu -o - | sed -n \"/<PRE/,/<\\/PRE/p\"  ", &$out);
         echo "<div class=\"gitcode\">\n";
-        //echo highlight_code(implode("\n",$out));
-        echo highlight_string(implode("\n",$out));
+        echo implode("\n",$out);
         echo "</div>\n";
     }
 
@@ -548,7 +554,7 @@ $extEnscript = array
         $repo = get_repo_path($_GET['p']);
         $name = $_GET['n'];
         $hash = $_GET['h'];
-        //header("Content-Type: text/plain");
+        header("Content-Type: text/plain");
         //header( mime_content_type($name) );
         $str = system("GIT_DIR=$repo git-cat-file blob $hash");
         echo  $str;
