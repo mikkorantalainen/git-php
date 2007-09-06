@@ -86,6 +86,79 @@
 
     sort($repos);
 
+$extEnscript = array
+(
+  '.ada'     => 'ada',
+  '.adb'     => 'ada',
+  '.ads'     => 'ada',
+  '.awk'     => 'awk',
+  '.c'       => 'c',
+  '.c++'     => 'cpp',
+  '.cc'      => 'cpp',
+  '.cpp'     => 'cpp',
+  '.csh'     => 'csh',
+  '.cxx'     => 'cpp',
+  '.diff'    => 'diffu',
+  '.dpr'     => 'delphi',
+  '.e'       => 'eiffel',
+  '.el'      => 'elisp',
+  '.eps'     => 'postscript',
+  '.f'       => 'fortran',
+  '.for'     => 'fortran',
+  '.gs'      => 'haskell',
+  '.h'       => 'c',
+  '.hpp'     => 'cpp',
+  '.hs'      => 'haskell',
+  '.htm'     => 'html',
+  '.html'    => 'html',
+  '.idl'     => 'idl',
+  '.java'    => 'java',
+  '.js'      => 'javascript',
+  '.lgs'     => 'haskell',
+  '.lhs'     => 'haskell',
+  '.m'       => 'objc',
+  '.m4'      => 'm4',
+  '.man'     => 'nroff',
+  '.nr'      => 'nroff',
+  '.p'       => 'pascal',
+  '.pas'     => 'delphi',
+  '.patch'   => 'diffu',
+  '.pkg'     => 'sql', 
+  '.pl'      => 'perl',
+  '.pm'      => 'perl',
+  '.pp'      => 'pascal',
+  '.ps'      => 'postscript',
+  '.s'       => 'asm',
+  '.scheme'  => 'scheme',
+  '.scm'     => 'scheme',
+  '.scr'     => 'synopsys',
+  '.sh'      => 'sh',
+  '.shtml'   => 'html',
+  '.sql'     => 'sql',
+  '.st'      => 'states',
+  '.syn'     => 'synopsys',
+  '.synth'   => 'synopsys',
+  '.tcl'     => 'tcl',
+  '.tex'     => 'tex',
+  '.texi'    => 'tex',
+  '.texinfo' => 'tex',
+  '.v'       => 'verilog',
+  '.vba'     => 'vba',
+  '.vh'      => 'verilog',
+  '.vhd'     => 'vhdl',
+  '.vhdl'    => 'vhdl',
+  '.py'      => 'python',
+                                                                                                                           
+  // The following are handled internally, since there's no
+  // support for them in Enscript
+                                                                                                                                 
+  '.php'     => 'php',
+  '.phtml'   => 'php',
+  '.php3'    => 'php',
+  '.php'     => 'php'  
+);
+
+
     if (!isset($git_embed) && $git_embed != true)
         $git_embed = false;
 
@@ -167,15 +240,34 @@
     }
 
     function html_blob($proj, $blob)    {
+        global $extEnscript;
         $repo = get_repo_path($proj);
         $out = array();
-        $plain = "<a href=\"".sanitized_url()."p=$proj&dl=plain&h=$blob\">plain</a>";
+        $name=$_GET['n'];
+        $plain = "<a href=\"".sanitized_url()."p=$proj&dl=plain&h=$blob&n=$name\">plain</a>";
+        $ext=@$extEnscript[strrchr($name,".")];
         echo "<div style=\"float:right;padding:7px;\">$plain</div>\n";
-        exec("GIT_DIR=$repo git-cat-file blob $blob", &$out);
+        //echo "$ext";
+        if( $ext == "php" || $ext == "" )
+        {
+            //echo "nonhighlight!";
+            $cmd="GIT_DIR=$repo git-cat-file blob $blob";
+            exec( $cmd, &$out );
+            $out = implode("\n",$out);
+            $out = highlight_string( $out );
+        }
+        else
+        {
+            //echo "highlight";
+            $result=0;
+            $cmd="GIT_DIR=$repo git-cat-file blob $blob | enscript --language=html --color=1 --pretty-print=$ext -o - | sed -n \"/<PRE/,/<\\/PRE/p\" ";
+            exec("$cmd", &$out);
+            $out = implode("\n",$out);
+        }
         echo "<div class=\"gitcode\">\n";
-        //echo highlight(implode("\n", $out));
-        //echo highlight_code(implode("\n",$out));
-        echo highlight_string(implode("\n",$out));
+        //echo "$ext";
+        echo "$out";
+        
         echo "</div>\n";
     }
 
@@ -200,8 +292,8 @@
             if ($obj['type'] == 'tree')
                 $objlink = "<a href=\"".sanitized_url()."p=$proj&t={$obj['hash']}\">{$obj['file']}</a>\n";
             else if ($obj['type'] == 'blob')    {
-                $plain = "<a href=\"".sanitized_url()."p=$proj&dl=plain&h={$obj['hash']}\">plain</a>";
-                $objlink = "<a class=\"blob\" href=\"".sanitized_url()."p=$proj&b={$obj['hash']}\">{$obj['file']}</a>\n";
+                $plain = "<a href=\"".sanitized_url()."p=$proj&dl=plain&h={$obj['hash']}&n={$obj['file']}\">plain</a>";
+                $objlink = "<a class=\"blob\" href=\"".sanitized_url()."p=$proj&b={$obj['hash']}&n={$obj['file']}\">{$obj['file']}</a>\n";
             }
 
             echo "<tr><td>$perm</td><td>$objlink</td><td>$plain</td></tr>\n";
@@ -454,10 +546,12 @@
 
     function write_plain()  {
         $repo = get_repo_path($_GET['p']);
+        $name = $_GET['n'];
         $hash = $_GET['h'];
-        header("Content-Type: text/plain");
+        //header("Content-Type: text/plain");
+        //header( mime_content_type($name) );
         $str = system("GIT_DIR=$repo git-cat-file blob $hash");
-        echo $str;
+        echo  $str;
         die();
     }
 
