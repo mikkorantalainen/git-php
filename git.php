@@ -620,10 +620,18 @@ $extEnscript = array
         $repo = get_repo_path($_GET['p']);
         $name = $_GET['n'];
         $hash = $_GET['h'];
-        header("Content-Type: text/plain");
-        //header( mime_content_type($name) );
-        $str = system("GIT_DIR=$repo git-cat-file blob $hash");
-        echo  $str;
+		exec("GIT_DIR=$repo git-cat-file blob $hash > /tmp/$hash.$name ");
+        $filesize = filesize("/tmp/$hash.$name");
+        header("Pragma: public"); // required
+        header("Expires: 0");
+        header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+        header("Cache-Control: private",false); // required for certain browsers
+        header("Content-Transfer-Encoding: binary");
+        //header("Content-Type: application/x-tar-gz");
+        header("Content-Length: " . $filesize);
+        header("Content-Disposition: attachment; filename=\"$name\";" );
+        //$str = system("GIT_DIR=$repo git-cat-file blob $hash 2>/dev/null");
+        echo file_get_contents("/tmp/$hash.$name");
         die();
     }
 
