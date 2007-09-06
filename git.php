@@ -115,7 +115,8 @@
 	// add some keywords to valid array
 	$validargs = array_merge( $validargs, array( 
 		"targz", "zip", "git_logo", "plain", "rss2",
-		"commitdiff" 
+		"commitdiff",
+		"fullsize" 
 	));
 
 	// now, all arguments must be in validargs
@@ -377,7 +378,10 @@ $extEnscript = array
     function html_shortlog($repo, $count)   {
         echo "<table>\n";
         $c = git_commit($repo, "HEAD");
-        for ($i = 0; $i < $count && $c; $i++)  {
+		$unlim=false;
+		if( isset($_GET['s']) && $_GET['s'] == "fullsize" )
+			$unlim=true;
+        for ($i = 0; (($i < $count) || $unlim) && $c; $i++)  {
             $date = date("D n/j/y G:i", (int)$c['date']);
             $cid = $c['commit_id'];
             $pid = $c['parent'];
@@ -386,6 +390,8 @@ $extEnscript = array
             echo "<tr><td>$date</td><td>{$c['author']}</td><td>$mess</td><td>$diff</td></tr>\n"; 
             $c = git_commit($repo, $c["parent"]);
         }
+		if( $unlim == false )
+			echo "<tr><td></td><td></td><td><a href=\"".sanitized_url()."p={$_GET['p']}&s=fullsize\">Get all commits</a></td></tr>\n";
         echo "</table>\n";
     }
 
