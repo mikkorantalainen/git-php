@@ -65,12 +65,14 @@
 		{
             while (false !== ($file = readdir($handle))) 
 			{
-                if ($file != "." && $file != ".." && (is_dir($file))) 
+				$fullpath = $repo_directory . "/" . $file;
+				//printf( "%s,%d\n", $file, is_dir($repo_directory . "/" . $file) );
+                if ($file != "." && $file != ".." && (is_dir($fullpath))) 
 				{
                     /* TODO: Check for valid git repos */
 					// fill the security array.
 					$validargs[] = trim($file);
-                    $repos[] = trim($repo_directory . $file);
+                    $repos[] = trim($fullpath);
                 }
             }
             closedir($handle);
