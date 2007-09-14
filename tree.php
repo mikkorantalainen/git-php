@@ -24,6 +24,8 @@
 // | Author: Peeter Vois                                  |
 // +------------------------------------------------------------------------+ 
 
+//var_dump(gd_info());
+
 $repo_directory = "/home/peeter/public_html/git/git-git.git";
 
 $cmd="GIT_DIR=$repo_directory git-rev-list --all --full-history --date-order ";
@@ -98,7 +100,8 @@ foreach( $out as $line )
 	}
 }
 
-echo "number of items $nr\n";
+//echo "number of items $nr\n";
+$rows = $nr;
 
 // filling in childs
 foreach( $entries as $item )
@@ -185,15 +188,47 @@ function count_same_merges( $arp, $x ){
 	return $c;
 }
 
-// just print something out
-
-for( $i=0; $i<$nr; $i++ ){
-	$a=$entries[$order[$i]];
-	$s="";
-	for( $j=0; $j < $columns; $j++ ){
-		if( $j == $a->x ) $s .= "*"; else $s .= " ";
-	}
-	echo $s ." ". $a->subject."\n";
+// counting dependencies for graph
+// points to rows that do have lines in the slice
+$grids=array();
+foreach( $entries as $e ){
+    foreach( $e->parents as $pm ){
+        $p = $entries[$pm];
+        for( $i=$p->y; $i>=$e->y; $i-- ){
+            $grids[$i][] = $e->y;
+        }
+    }
 }
+
+
+// creating graph picture
+
+// columns, rows
+$w = 15; $wo = 7;
+$h = 21; $ho = 10;
+$r = 8;
+
+// draw the graph slices
+for( $y=0; $y<$rows; $y++ ){
+//for( $y=0; $y<3; $y++ ){
+    $im = imagecreate( $w * $columns, $h );
+    $cbg = imagecolorallocate( $im, 255, 255, 255 );
+    $ctr = imagecolortransparent( $im, $cbg );
+    $cmg = imagecolorallocate( $im, 0, 0, 150 );
+    $cbl = imagecolorallocate( $im, 0, 0, 0 );
+    foreach( $grids[$y] as $g ){
+        $e = $entries[$order[$g]];
+        foreach( $e->parents as $pm ){
+            $p = $entries[$pm];
+            imageline( $im, $e->x * $w + $wo, ($e->y-$y) * $h + $ho, $p->x * $w + $wo, ($p->y - $y) * $h + $ho, $cmg );
+        }
+    }
+    $e = $entries[$order[$y]];
+    imagefilledellipse( $im, $e->x * $w + $wo, $ho, $r, $r, $cbl );
+    $filename = "tree-".$y.".png";
+    imagepng( $im, $filename );
+}
+
+die();
 
 ?>
