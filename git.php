@@ -102,20 +102,19 @@
 		// now load the repository into validargs
 		$repo=$_GET['p'];
 		$out=array();
-        exec("GIT_DIR=$repo git-ls-tree -r -t HEAD | sed -e 's/\t/ /g'", &$out);
+        exec("GIT_DIR=$repo_directory$repo git-ls-tree -r -t HEAD | sed -e 's/\t/ /g'", &$out);
         foreach ($out as $line) 
 		{
             $arr = explode(" ", $line);
             $validargs[] = $arr[2]; // add the hash to valid array
             $validargs[] = basename($arr[3]); // add the file name to valid array
-        }		
+        }	
 		// add commit tags
-		$c = git_commit($repo, "HEAD");
-		while( $c )
+		unset( $out );
+		exec("GIT_DIR=$repo_directory$repo git-rev-list --all --full-history --date-order --pretty=oneline | awk '{print \$1}'", &$out);
+		foreach ($out as $line)
 		{
-			$validargs[] = $c['commit_id'];
-			$validargs[] = $c['parent'];
-            $c = git_commit($repo, $c['parent']);
+			$validargs[] = $line;
         }
 	}
 
@@ -124,7 +123,7 @@
 	$validargs = array_merge( $validargs, array( 
 		"targz", "zip", "git_logo", "plain", "rss2",
 		"commitdiff",
-		"fullsize" 
+		"fullsize"
 	));
 
 	// now, all arguments must be in validargs
@@ -287,7 +286,7 @@ $extEnscript = array
         $repo = get_repo_path($proj);
         html_desc($repo);
         if (!isset($_GET['t']) && !isset($_GET['b']))
-            html_shortlog($proj, 6);
+            html_shortlog($proj, 8);
     }
 
     function html_browse($proj)   {
@@ -394,16 +393,19 @@ $extEnscript = array
         for ($i = 0; (($i < $count) || $unlim) && ($entries[$order[$i]]->commit != ""); $i++)  {
             $date = date("D n/j/y G:i", (int)$entries[$order[$i]]->date);
             $cid = $entries[$order[$i]]->commit;
-            $pid = $entries[$order[$i]]->parent[0];
+            $pid = $entries[$order[$i]]->parents[0];
             $mess = short_desc($entries[$order[$i]]->subject, 110);
-            $diff = "<a href=\"".sanitized_url()."p={$_GET['p']}&a=commitdiff&h=$cid&hb=$pid\">commitdiff</a>";
+            if( $pid == "" )
+                $diff = "no diff";
+            else
+                $diff = "<a href=\"".sanitized_url()."p={$_GET['p']}&a=commitdiff&h=$cid&hb=$pid\">commitdiff</a>";
             echo "<tr><td>$date</td>";
             echo "<td><img src=\"" . $cache_name . $repo. "/tree-".$i.".png\" /></td>";
             echo "<td>{$c['author']}</td><td>$mess</td><td>$diff</td></tr>\n"; 
         }
-		if( $unlim == false )
-			echo "<tr><td></td><td></td><td></td><td><a href=\"".sanitized_url()."p={$_GET['p']}&s=fullsize\">Get all commits</a></td></tr>\n";
         echo "</table></div>\n";
+		if( $unlim == false )
+			echo "<table><tr><td><a href=\"".sanitized_url()."p={$_GET['p']}&s=fullsize\">Get all commits</a></td></tr></table>\n";
     }
 
     function html_desc($repo)    {

@@ -175,7 +175,7 @@ function create_images( $repo ){
 
     // columns, rows
     $w = 15; $wo = 7;
-    $h = 27; $ho = 13;
+    $h = 19; $ho = 9;
     $r = 8;
 
     // draw the graph slices
