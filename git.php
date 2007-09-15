@@ -22,7 +22,10 @@
 // | Boston, MA  02111-1307, USA.                                           |
 // +------------------------------------------------------------------------+
 // | Author: Zack Bartel <zack@bartel.com>                                  |
+// | Author: Peeter Vois http://people.proekspert.ee/peeter/blog            |
 // +------------------------------------------------------------------------+ 
+
+    require_once( 'tree.php' );
 
     global $title;
     global $repos; // list of repositories
@@ -33,6 +36,7 @@
     global $http_method_prefix; // prefix path for http clone method
     global $communication_link; // link for sending a message to owner
 	global $failedarg;
+	global $cache_name;
 
     /* Add the default css */
     $git_css = true;
@@ -43,6 +47,8 @@
     $title  = "git";
     $repo_index = "index.aux";
     $repo_directory = "/home/peeter/public_html/git/";
+    $cache_name=".cache/";
+    $cache_directory = $repo_directory.$cache_name;
     $http_method_prefix = "http://people.proekspert.ee/peeter/git/";
     $communication_link = "http://people.proekspert.ee/peeter/blog";
 
@@ -67,7 +73,7 @@
 			{
 				$fullpath = $repo_directory . "/" . $file;
 				//printf( "%s,%d\n", $file, is_dir($repo_directory . "/" . $file) );
-                if ($file != "." && $file != ".." && (is_dir($fullpath))) 
+                if ($file[0] != '.' && is_dir($fullpath) ) 
 				{
                     /* TODO: Check for valid git repos */
 					// fill the security array.
@@ -281,7 +287,7 @@ $extEnscript = array
         $repo = get_repo_path($proj);
         html_desc($repo);
         if (!isset($_GET['t']) && !isset($_GET['b']))
-            html_shortlog($repo, 6);
+            html_shortlog($proj, 6);
     }
 
     function html_browse($proj)   {
@@ -378,23 +384,26 @@ $extEnscript = array
     }
 
     function html_shortlog($repo, $count)   {
-        echo "<table>\n";
-        $c = git_commit($repo, "HEAD");
+        global $cache_name, $order, $entries;
+        echo "<div class=\"imgtable\">\n";
+        echo "<table cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n";
+        $c = create_images($repo);
 		$unlim=false;
 		if( isset($_GET['s']) && $_GET['s'] == "fullsize" )
 			$unlim=true;
-        for ($i = 0; (($i < $count) || $unlim) && $c; $i++)  {
-            $date = date("D n/j/y G:i", (int)$c['date']);
-            $cid = $c['commit_id'];
-            $pid = $c['parent'];
-            $mess = short_desc($c['message'], 110);
+        for ($i = 0; (($i < $count) || $unlim) && ($entries[$order[$i]]->commit != ""); $i++)  {
+            $date = date("D n/j/y G:i", (int)$entries[$order[$i]]->date);
+            $cid = $entries[$order[$i]]->commit;
+            $pid = $entries[$order[$i]]->parent[0];
+            $mess = short_desc($entries[$order[$i]]->subject, 110);
             $diff = "<a href=\"".sanitized_url()."p={$_GET['p']}&a=commitdiff&h=$cid&hb=$pid\">commitdiff</a>";
-            echo "<tr><td>$date</td><td>{$c['author']}</td><td>$mess</td><td>$diff</td></tr>\n"; 
-            $c = git_commit($repo, $c["parent"]);
+            echo "<tr><td>$date</td>";
+            echo "<td><img src=\"" . $cache_name . $repo. "/tree-".$i.".png\" /></td>";
+            echo "<td>{$c['author']}</td><td>$mess</td><td>$diff</td></tr>\n"; 
         }
 		if( $unlim == false )
-			echo "<tr><td></td><td></td><td><a href=\"".sanitized_url()."p={$_GET['p']}&s=fullsize\">Get all commits</a></td></tr>\n";
-        echo "</table>\n";
+			echo "<tr><td></td><td></td><td></td><td><a href=\"".sanitized_url()."p={$_GET['p']}&s=fullsize\">Get all commits</a></td></tr>\n";
+        echo "</table></div>\n";
     }
 
     function html_desc($repo)    {
@@ -894,10 +903,16 @@ $extEnscript = array
             }
 
             #gitbody td {
-                padding: 5px 0px 0px 7px;
+                padding: 0px 0px 0px 7px;
+            }
+            
+            div.imgtable table{
+                padding: 0px 0px 0px 7px;
+                border-width: 0px;
+                line-height: 1px;
             }
 
-            tr:hover { background-color:#edece6; }
+            tr:hover { background-color:#cdccc6; }
 
             div.gitbrowse a.blob {
                 text-decoration: none;
