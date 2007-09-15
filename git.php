@@ -395,13 +395,14 @@ $extEnscript = array
             $cid = $entries[$order[$i]]->commit;
             $pid = $entries[$order[$i]]->parents[0];
             $mess = short_desc($entries[$order[$i]]->subject, 110);
+            $auth = $entries[$order[$i]]->author;
             if( $pid == "" )
                 $diff = "no diff";
             else
                 $diff = "<a href=\"".sanitized_url()."p={$_GET['p']}&a=commitdiff&h=$cid&hb=$pid\">commitdiff</a>";
             echo "<tr><td>$date</td>";
             echo "<td><img src=\"" . $cache_name . $repo. "/tree-".$i.".png\" /></td>";
-            echo "<td>{$c['author']}</td><td>$mess</td><td>$diff</td></tr>\n"; 
+            echo "<td>{".$auth."}</td><td>$mess</td><td>$diff</td></tr>\n"; 
         }
         echo "</table></div>\n";
 		if( $unlim == false )
