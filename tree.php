@@ -67,10 +67,11 @@ function create_images( $repo ){
     $nr=0;
     do{
         $cmd="GIT_DIR=$repo_directory$repo git-rev-list --all --full-history --date-order ";
-        $cmd .= "--max-count=1 --skip=" .$nr ." ";
+        $cmd .= "--max-count=100 --skip=" .$nr ." ";
         $cmd .= "--pretty=format:\"";
         $cmd .= "parents %P%n";
         $cmd .= "endrecord%n\"";
+   		unset($out);
         $out = array();
 
         //echo "$cmd\n";
@@ -104,6 +105,9 @@ function create_images( $repo ){
         		$entries[$commit]->y = $nr;
         		$entries[$commit]->x = -1;
         		$nr = $nr +1;
+        		unset($descriptor);
+        		unset($commit);
+        		unset($parents);
         		$descriptor="";
         		$commit="";
         		$parents=array();
