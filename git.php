@@ -25,7 +25,7 @@
 // | Author: Peeter Vois http://people.proekspert.ee/peeter/blog            |
 // +------------------------------------------------------------------------+ 
 
-    require_once( 'tree.php' );
+    require_once( 'tree1.php' );
 
     global $title;
     global $repos; // list of repositories
@@ -386,16 +386,17 @@ $extEnscript = array
         global $cache_name, $order, $entries;
         echo "<div class=\"imgtable\">\n";
         echo "<table cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n";
-        $c = create_images($repo);
+        create_images($repo);
 		$unlim=false;
 		if( isset($_GET['s']) && $_GET['s'] == "fullsize" )
 			$unlim=true;
         for ($i = 0; (($i < $count) || $unlim) && ($entries[$order[$i]]->commit != ""); $i++)  {
-            $date = date("D n/j/y G:i", (int)$entries[$order[$i]]->date);
+            $c = git_commit($repo, $entries[$order[$i]]->commit);
+            $date = date("D n/j/y G:i", (int)$c['date']);
             $cid = $entries[$order[$i]]->commit;
             $pid = $entries[$order[$i]]->parents[0];
-            $mess = short_desc($entries[$order[$i]]->subject, 110);
-            $auth = $entries[$order[$i]]->author;
+            $mess = short_desc($c['message'], 110);
+            $auth = $c['author'];
             if( $pid == "" )
                 $diff = "no diff";
             else

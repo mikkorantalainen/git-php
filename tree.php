@@ -174,7 +174,7 @@ function create_images( $repo ){
         //echo "$filename\n";
     }
     
-    return $entries;
+    //return $entries;
 }
 
 
