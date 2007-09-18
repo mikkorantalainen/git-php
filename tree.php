@@ -28,7 +28,7 @@
 //header("Content-Type: text/plain");
 //$repo_directory = "/home/peeter/public_html/git/";
 //$cache_directory = $repo_directory.".cache/";
-//$rv=putenv( "PATH=/home/peeter/local/bin:/usr/local/bin:/usr/bin:/bin:/usr/bin/X11" );
+//v=putenv( "PATH=/home/peeter/local/bin:/usr/local/bin:/usr/bin:/bin:/usr/bin/X11" );
 //echo "$rv";
 //create_images( "fiekassaraha.git" );
 
@@ -62,53 +62,56 @@ function create_images( $repo ){
     }
 
     //echo "$repo\n";
-
-    $cmd="GIT_DIR=$repo_directory$repo git-rev-list --all --full-history --date-order ";
-    $cmd .= "--pretty=format:\"";
-    $cmd .= "parents %P%n";
-    $cmd .= "endrecord%n\"";
-    $out = array();
-
-    //echo "$cmd\n";
-    $rrv= exec( $cmd, &$out );
-    //echo implode("\n",$out);
-    
-    // reading the commit tree
     $entries=array();
-    $descriptor="";
-    $commit="";
-    $parents=array();
     $order=array(); // keeps record of output order
     $nr=0;
-    foreach( $out as $line )
-    {
-        // tking the data descriptor
-    	$d = explode( " ", $line );
-    	$descriptor = $d[0];
-    	$d = array_slice( $d, 1 );
-    	switch($descriptor)
-    	{
-    	case "commit":
-    		$commit=$d[0];
-    		break;
-    	case "parents":
-    		$parents=$d;
-    		break;
-    	case "endrecord":
-    		$entries[$commit] = new node;
-    		$entries[$commit]->parents=$parents;
-    		$entries[$commit]->merges=array();
-    		$entries[$commit]->commit=$commit;
-    		$order[$nr] = $commit;
-    		$entries[$commit]->y = $nr;
-    		$entries[$commit]->x = -1;
-    		$nr = $nr +1;
-    		$descriptor="";
-    		$commit="";
-    		$parents=array();
-    		break;
-    	}
-    }
+    do{
+        $cmd="GIT_DIR=$repo_directory$repo git-rev-list --all --full-history --date-order ";
+        $cmd .= "--max-count=1 --skip=" .$nr ." ";
+        $cmd .= "--pretty=format:\"";
+        $cmd .= "parents %P%n";
+        $cmd .= "endrecord%n\"";
+        $out = array();
+
+        //echo "$cmd\n";
+        $rrv= exec( $cmd, &$out );
+        //echo implode("\n",$out);
+        
+        // reading the commit tree
+        $descriptor="";
+        $commit="";
+        $parents=array();
+        foreach( $out as $line )
+        {
+            // tking the data descriptor
+        	$d = explode( " ", $line );
+        	$descriptor = $d[0];
+        	$d = array_slice( $d, 1 );
+        	switch($descriptor)
+        	{
+        	case "commit":
+        		$commit=$d[0];
+        		break;
+        	case "parents":
+        		$parents=$d;
+        		break;
+        	case "endrecord":
+        		$entries[$commit] = new node;
+        		$entries[$commit]->parents=$parents;
+        		$entries[$commit]->merges=array();
+        		$entries[$commit]->commit=$commit;
+        		$order[$nr] = $commit;
+        		$entries[$commit]->y = $nr;
+        		$entries[$commit]->x = -1;
+        		$nr = $nr +1;
+        		$descriptor="";
+        		$commit="";
+        		$parents=array();
+        		break;
+        	}
+        }
+        //echo count( $out ) ."\n";
+    }while( count( $out ) > 0 );
     unset($out);
     //echo "number of items $nr\n";
     $rows = $nr;

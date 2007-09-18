@@ -25,7 +25,7 @@
 // | Author: Peeter Vois http://people.proekspert.ee/peeter/blog            |
 // +------------------------------------------------------------------------+ 
 
-    require_once( 'tree1.php' );
+    require_once( 'tree.php' );
 
     global $title;
     global $repos; // list of repositories
