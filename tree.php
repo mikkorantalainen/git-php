@@ -34,12 +34,9 @@
 
 class node
 {
-    var $date = 0; // the date of commit
-    var $author = ""; // the author of commit
 	var $commit = ""; // the sha of this node
 	var $parents = array(); // the nodes this node is merged from
 	var $merges = array(); // the nodes that are merging from this node
-	var $subject = "";
 	var $x = -1; // the x coordinate of the node
 	var $y = -1; // the y coordinate of the node
 	var $length=0; // the verticl tree length
@@ -69,10 +66,6 @@ function create_images( $repo ){
     $cmd="GIT_DIR=$repo_directory$repo git-rev-list --all --full-history --date-order ";
     $cmd .= "--pretty=format:\"";
     $cmd .= "parents %P%n";
-    $cmd .= "tree %T%n";
-    $cmd .= "author %an%n";
-    $cmd .= "subject %s%n";
-    $cmd .= "date %cd%n";
     $cmd .= "endrecord%n\"";
     $out = array();
 
@@ -84,9 +77,6 @@ function create_images( $repo ){
     $entries=array();
     $descriptor="";
     $commit="";
-    $author="";
-    $date=0;
-    $subject="";
     $parents=array();
     $order=array(); // keeps record of output order
     $nr=0;
@@ -104,36 +94,18 @@ function create_images( $repo ){
     	case "parents":
     		$parents=$d;
     		break;
-    	case "tree":
-    		break;
-    	case "author":
-    	    $author =  implode( " ", $d );
-    		break;
-    	case "subject":
-    		$subject = implode( " ", $d );
-    		break;
-    	case "date":
-    	    //sscanf( implode( " ", $d ), "%d", $date );
-    	    break;
     	case "endrecord":
     		$entries[$commit] = new node;
     		$entries[$commit]->parents=$parents;
     		$entries[$commit]->merges=array();
     		$entries[$commit]->commit=$commit;
-    		$entries[$commit]->subject=$subject;
-    		$entries[$commit]->date=$date;
-    		$entries[$commit]->author=$author;
     		$order[$nr] = $commit;
     		$entries[$commit]->y = $nr;
     		$entries[$commit]->x = -1;
     		$nr = $nr +1;
-    		//echo implode(" ",$entries[$commit]->parents) ."\n"; die();
     		$descriptor="";
     		$commit="";
     		$parents=array();
-            $subject="";
-            $author="";
-            $date=0;
     		break;
     	}
     }
