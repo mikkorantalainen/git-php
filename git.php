@@ -392,18 +392,18 @@ $extEnscript = array
 			$unlim=true;
         for ($i = 0; (($i < $count) || $unlim) && ($entries[$order[$i]]->commit != ""); $i++)  {
             $c = git_commit($repo, $entries[$order[$i]]->commit);
-            $date = date("D n/j/y G:i", (int)$c['date']);
+            $date = date("n/j/y G:i", (int)$c['date']);
             $cid = $entries[$order[$i]]->commit;
             $pid = $entries[$order[$i]]->parents[0];
-            $mess = short_desc($c['message'], 110);
-            $auth = $c['author'];
+            $mess = short_desc($c['message'], 40);
+            $auth = short_desc($c['author'], 25);
             if( $pid == "" )
                 $diff = "no diff";
             else
                 $diff = "<a href=\"".sanitized_url()."p={$_GET['p']}&a=commitdiff&h=$cid&hb=$pid\">commitdiff</a>";
             echo "<tr><td>$date</td>";
             echo "<td><img src=\"" . $cache_name . $repo. "/tree-".$i.".png\" /></td>";
-            echo "<td>{".$auth."}</td><td>$mess</td><td>$diff</td></tr>\n"; 
+            echo "<td>{$auth}</td><td>$mess</td><td>$diff</td></tr>\n"; 
         }
         echo "</table></div>\n";
 		if( $unlim == false )

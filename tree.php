@@ -66,6 +66,7 @@ function create_images( $repo ){
     $order=array(); // keeps record of output order
     $nr=0;
     do{
+        unset($cmd);
         $cmd="GIT_DIR=$repo_directory$repo git-rev-list --all --full-history --date-order ";
         $cmd .= "--max-count=100 --skip=" .$nr ." ";
         $cmd .= "--pretty=format:\"";
