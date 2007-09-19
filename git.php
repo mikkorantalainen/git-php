@@ -132,7 +132,7 @@
 		if( !is_valid($value) )
 			hacker_gaught();
 	}
-
+    unset( $validargs );
 	// end of validity check
 
 $extEnscript = array
