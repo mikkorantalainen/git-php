@@ -34,7 +34,6 @@
 
 class node
 {
-	var $commit = ""; // the sha of this node
 	var $parents = array(); // the nodes this node is merged from
 	var $merges = array(); // the nodes that are merging from this node
 	var $x = -1; // the x coordinate of the node
@@ -86,6 +85,7 @@ function create_images( $repo ){
         foreach( $out as $line )
         {
             // tking the data descriptor
+            unset($d);
         	$d = explode( " ", $line );
         	$descriptor = $d[0];
         	$d = array_slice( $d, 1 );
@@ -101,7 +101,6 @@ function create_images( $repo ){
         		$entries[$commit] = new node;
         		$entries[$commit]->parents=$parents;
         		$entries[$commit]->merges=array();
-        		$entries[$commit]->commit=$commit;
         		$order[$nr] = $commit;
         		$entries[$commit]->y = $nr;
         		$entries[$commit]->x = -1;
@@ -109,8 +108,6 @@ function create_images( $repo ){
         		unset($descriptor);
         		unset($commit);
         		unset($parents);
-        		$descriptor="";
-        		$commit="";
         		$parents=array();
         		break;
         	}
@@ -127,8 +124,7 @@ function create_images( $repo ){
     	foreach( $item->parents as $commit )
     	{
     		if( $entries[$commit]->x != -1 ) continue;
-    		$entries[$commit]->merges[] = $item->commit;
-    		//if( $entries[$commit]->commit != $commit ) echo "khk " . $item->y ." ". $commit . "\n";
+    		$entries[$commit]->merges[] = $order[$item->y];
     	}
     }
 

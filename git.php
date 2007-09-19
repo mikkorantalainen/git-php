@@ -25,7 +25,8 @@
 // | Author: Peeter Vois http://people.proekspert.ee/peeter/blog            |
 // +------------------------------------------------------------------------+ 
 
-    require_once( 'tree.php' );
+    //require_once( 'tree1.php' ); // for debugging
+    require_once( 'tree.php' ); // for install
 
     global $title;
     global $repos; // list of repositories
@@ -383,18 +384,18 @@ $extEnscript = array
     }
 
     function html_shortlog($repo, $count)   {
-        global $cache_name, $order, $entries;
+        global $cache_name, $order;
         echo "<div class=\"imgtable\">\n";
         echo "<table cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n";
         create_images($repo);
 		$unlim=false;
 		if( isset($_GET['s']) && $_GET['s'] == "fullsize" )
 			$unlim=true;
-        for ($i = 0; (($i < $count) || $unlim) && ($entries[$order[$i]]->commit != ""); $i++)  {
-            $c = git_commit($repo, $entries[$order[$i]]->commit);
+        for ($i = 0; (($i < $count) || $unlim) && ($order[$i]!= ""); $i++)  {
+            $c = git_commit($repo, $order[$i]);
             $date = date("n/j/y G:i", (int)$c['date']);
-            $cid = $entries[$order[$i]]->commit;
-            $pid = $entries[$order[$i]]->parents[0];
+            $cid = $order[$i];
+            $pid = $c['parent'];
             $mess = short_desc($c['message'], 40);
             $auth = short_desc($c['author'], 25);
             if( $pid == "" )
