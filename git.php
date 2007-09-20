@@ -384,10 +384,10 @@ $extEnscript = array
     }
 
     function html_shortlog($repo, $count)   {
-        global $cache_name, $order;
+        global $cache_name;
         echo "<div class=\"imgtable\">\n";
         echo "<table cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n";
-        create_images($repo);
+        $order = create_images($repo);
 		$unlim=false;
 		if( isset($_GET['s']) && $_GET['s'] == "fullsize" )
 			$unlim=true;
@@ -408,7 +408,7 @@ $extEnscript = array
         }
         echo "</table></div>\n";
 		if( $unlim == false )
-			echo "<table><tr><td><a href=\"".sanitized_url()."p={$_GET['p']}&s=fullsize\">Get all commits</a></td></tr></table>\n";
+			echo "<table><tr><td><a href=\"".sanitized_url()."p={$_GET['p']}&s=fullsize\">Get all commits</a> (".count($order)." rows)</td></tr></table>\n";
     }
 
     function html_desc($repo)    {
@@ -554,34 +554,57 @@ $extEnscript = array
     }
 
     function git_commit($repo, $cid)  {
+        global $repo_directory;
         $out = array();
         $commit = array();
 
         if (strlen($cid) <= 0)
             return 0;
 
-        exec("GIT_DIR=$repo git-rev-list  --header --max-count=1 $cid", &$out);
+        $cmd="GIT_DIR=$repo_directory$repo git-rev-list ";
+        $cmd .= "--max-count=1 ";
+        $cmd .= "--pretty=format:\"";
+        $cmd .= "parents %P%n";
+        $cmd .= "tree %T%n";
+        $cmd .= "author %an%n";
+        $cmd .= "date %at%n";
+        $cmd .= "message %s%n";
+        $cmd .= "endrecord%n\" ";
+        $cmd .= $cid;
 
-        $commit["commit_id"] = $out[0];
-        $g = explode(" ", $out[1]);
-        $commit["tree"] = $g[1];
-
-        $g = explode(" ", $out[2]);
-        $commit["parent"] = $g[1];
-
-        $g = explode(" ", $out[3]);
-        /* variable number of strings for the name */
-        for ($i = 1; $g[$i][0] != '<' && $i < 5; $i++)   {
-            $commit["author"] .= "{$g[$i]} ";
-        }
-
-        /* add the email */
-        $commit["date"] = "{$g[++$i]} {$g[++$i]}";
-        $commit["message"] = "";
-        $size = count($out);
-        for (; $i < $size; $i++)
-            if( strlen( $commit["message"] ) == 0 )
-                $commit["message"] .= $out[$i];
+        exec($cmd, &$out);
+        
+        foreach( $out as $line )
+        {
+            // tking the data descriptor
+            unset($d);
+        	$d = explode( " ", $line );
+        	$descriptor = $d[0];
+        	$d = array_slice( $d, 1 );
+        	switch($descriptor)
+        	{
+        	case "commit":
+        		$commit["commit_id"] = $d[0];
+        		break;
+        	case "parents":
+        		$commit["parent"] = $d[0];
+        		break;
+        	case "tree":
+        		$commit["tree"] = $d[0];
+        		break;
+        	case "author":
+        		$commit["author"] = implode( " ", $d );
+        		break;
+        	case "date":
+        		$commit["date"] = $d[0];
+        		break;
+        	case "message":
+        		$commit["message"] = implode( " ", $d );
+        		break;
+        	case "endrecord":
+        	    break;
+        	}
+        }        
         return $commit;
     }
 
