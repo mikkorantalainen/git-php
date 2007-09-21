@@ -237,7 +237,7 @@ $extEnscript = array
         html_summary($_GET['p']);
         html_spacer();
         if ($_GET['a'] == "commitdiff")
-            html_diff($_GET['p'], $_GET['h'], $_GET['hb']);
+            html_diff($_GET['p'], $_GET['h']);
         else    {
             html_title("Files");
             html_browse($_GET['p']);
@@ -353,10 +353,11 @@ $extEnscript = array
         echo "</div>\n";
     }
 
-    function html_diff($proj, $commit, $parent)    {
+    function html_diff($proj, $commit)    {
         $repo = get_repo_path($proj);
+        $c = git_commit( $proj, $commit );
         $out = array();
-        exec("GIT_DIR=$repo git-diff $parent $commit | enscript --language=html --color=1 --highlight=diffu -o - | sed -n \"/<PRE/,/<\\/PRE/p\"  ", &$out);
+        exec("GIT_DIR=$repo git-diff ".$c['parent'][0]." $commit | enscript --language=html --color=1 --highlight=diffu -o - | sed -n \"/<PRE/,/<\\/PRE/p\"  ", &$out);
         echo "<div class=\"gitcode\">\n";
         echo implode("\n",$out);
         echo "</div>\n";
@@ -395,13 +396,13 @@ $extEnscript = array
             $c = git_commit($repo, $order[$i]);
             $date = date("n/j/y G:i", (int)$c['date']);
             $cid = $order[$i];
-            $pid = $c['parent'];
+            $pid = $c['parent'][0];
             $mess = short_desc($c['message'], 40);
             $auth = short_desc($c['author'], 25);
             if( $pid == "" )
-                $diff = "no diff";
+                $diff = "diff";
             else
-                $diff = "<a href=\"".sanitized_url()."p={$_GET['p']}&a=commitdiff&h=$cid&hb=$pid\">commitdiff</a>";
+                $diff = "<a href=\"".sanitized_url()."p={$_GET['p']}&a=commitdiff&h=$cid\">diff</a>";
             echo "<tr><td>$date</td>";
             echo "<td><img src=\"" . $cache_name . $repo. "/tree-".$i.".png\" /></td>";
             echo "<td>{$auth}</td><td>$mess</td><td>$diff</td></tr>\n"; 
@@ -587,7 +588,7 @@ $extEnscript = array
         		$commit["commit_id"] = $d[0];
         		break;
         	case "parents":
-        		$commit["parent"] = $d[0];
+        		$commit["parent"] = $d;
         		break;
         	case "tree":
         		$commit["tree"] = $d[0];
@@ -751,7 +752,7 @@ $extEnscript = array
                 <description><?php echo $c['message'] ?></description>
                 <content><?php echo $c['message'] ?></content>
             </item>
-            <?php $c = git_commit($repo, $c['parent']);
+            <?php $c = git_commit($repo, $c['parent'][0]);
                 $link = "http://{$_SERVER['HTTP_HOST']}".sanitized_url()."p=$proj&amp;a=commitdiff&amp;h={$c['commit_id']}&amp;hb={$c['parent']}";
                   endfor;
             ?>

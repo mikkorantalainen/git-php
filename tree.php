@@ -21,7 +21,7 @@
 // | Foundation, Inc., 59 Temple Place - Suite 330,                         |
 // | Boston, MA  02111-1307, USA.                                           |
 // +------------------------------------------------------------------------+
-// | Author: Peeter Vois                                  |
+// | Author: Peeter Vois                                                    |
 // +------------------------------------------------------------------------+ 
 
 //var_dump(gd_info());
@@ -141,7 +141,7 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 
     $w = 7; $wo = 3;
     $h = 15; $ho = 7;
-    $r = 8;
+    $r = 7; $rj = 8;
 
     $columns = count($pin);
 	$lin = array_fill(0,$columns,'-');
@@ -151,12 +151,15 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
     $ctr = imagecolortransparent( $im, $cbg );
     $cmg = imagecolorallocate( $im, 0, 0, 200 );
     $cbl = imagecolorallocate( $im, 0, 0, 0 );
+    $crd = imagecolorallocate( $im, 255, 0, 0 );
 
 
 	for( $i=0; $i<$columns; $i++ ){
 		if( $vin[$i] == $commit ){
 			// small vertical
 			imageline( $im, $i * $w + $wo, $ho, $i * $w + $wo, 0, $cmg );
+			imageline( $im, $i * $w + $wo-1, $ho, $i * $w + $wo-1, 0, $cmg );
+			//imageline( $im, $i * $w + $wo+1, $ho, $i * $w + $wo+1, 0, $cmg );
 		}
 		if( $pin[$i] != "." ){
 			// we have a parent
@@ -164,12 +167,22 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 				// the parent is our parent
 				// draw the horisontal for it
 				imageline( $im, $i * $w + $wo, $ho, $x * $w + $wo, $ho, $cmg );
+				imageline( $im, $i * $w + $wo, $ho-1, $x * $w + $wo, $ho-1, $cmg );
+				//imageline( $im, $i * $w + $wo, $ho+1, $x * $w + $wo, $ho+1, $cmg );
 				// draw the little vertical for it
-				imageline( $im, $i * $w + $wo, $ho, $i * $w + $wo, $h, $cmg );
+				if( $pin[$i] == $parents[0] ){
+    				imageline( $im, $i * $w + $wo, $ho, $i * $w + $wo, $h, $crd );
+    				imageline( $im, $i * $w + $wo-1, $ho, $i * $w + $wo-1, $h, $crd );
+    			}
+    			else{
+    				imageline( $im, $i * $w + $wo, $ho, $i * $w + $wo, $h, $cmg );
+    				imageline( $im, $i * $w + $wo-1, $ho, $i * $w + $wo-1, $h, $cmg );
+    			}
 				// look if this is requested for the upper side
 				if( $vin[$i] == $pin[$i] ){
 					// small vertical for upper side
 					imageline( $im, $i * $w + $wo, $ho, $i * $w + $wo, 0, $cmg );
+					imageline( $im, $i * $w + $wo-1, $ho, $i * $w + $wo-1, 0, $cmg );
 				}
 				// mark the cell to have horisontal
 				$k = $x;
@@ -180,11 +193,6 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 			}
 		}
 	}
-	/*if( $y == 17 ){
-		//header("Content-Type: text/plain");
-		echo implode( ",", $lin ) . "\n";
-		die();
-	}*/
 	// draw passthrough lines
 	for( $i=0; $i<$columns; $i++ ){
 		if( $pin[$i] != "." && ! in_array($pin[$i],$parents,true) ){
@@ -192,12 +200,18 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 			// check if we have horisontal for this column
 			if( $lin[$i] == '#' ){
 				// draw pass-by junction
-				imagearc( $im, $i * $w + $wo, $ho, $r, $r, 270, 90, $cmg );
-				imageline( $im, $i * $w + $wo, 0, $i * $w + $wo, ($h - $r) / 2, $cmg );
-				imageline( $im, $i * $w + $wo, $h-($h - $r) / 2, $i * $w + $wo, $h, $cmg );
+				if( $i < $x )
+				    imagearc( $im, $i * $w + $wo, $ho, $rj, $rj+1, 90, 270, $cmg );
+				else
+				    imagearc( $im, $i * $w + $wo, $ho, $rj, $rj+1, 270, 90, $cmg );
+				imageline( $im, $i * $w + $wo, 0, $i * $w + $wo, ($h - $rj) / 2, $cmg );
+				imageline( $im, $i * $w + $wo-1, 0, $i * $w + $wo-1, ($h - $rj) / 2, $cmg );
+				imageline( $im, $i * $w + $wo, $h-($h - $rj) / 2, $i * $w + $wo, $h, $cmg );
+				imageline( $im, $i * $w + $wo-1, $h-($h - $rj) / 2, $i * $w + $wo-1, $h, $cmg );
 			} else {
 				// draw vertical
 				imageline( $im, $i * $w + $wo, 0, $i * $w + $wo, $h, $cmg );
+				imageline( $im, $i * $w + $wo-1, 0, $i * $w + $wo-1, $h, $cmg );
 			}
 		}
 	}
