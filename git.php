@@ -287,7 +287,7 @@ $extEnscript = array
         $repo = get_repo_path($proj);
         html_desc($repo);
         if (!isset($_GET['t']) && !isset($_GET['b']))
-            html_shortlog($proj, 8);
+            html_shortlog($proj, 20);
     }
 
     function html_browse($proj)   {

@@ -57,7 +57,7 @@ function create_images( $repo ){
     do{
         unset($cmd);
         $cmd="GIT_DIR=$repo_directory$repo git-rev-list --all --full-history --date-order ";
-        $cmd .= "--max-count=100 --skip=" .$nr ." ";
+        $cmd .= "--max-count=1000 --skip=" .$nr ." ";
         $cmd .= "--pretty=format:\"";
         $cmd .= "parents %P%n";
         $cmd .= "endrecord%n\"";
@@ -89,6 +89,7 @@ function create_images( $repo ){
         		break;
         	case "endrecord":
         		$order[$nr] = $commit;
+				$vin = $pin;
         		// figure out the position of this node
         		if( in_array($commit,$pin,true) ){
         		    $coord[$nr] = array_search( $commit,$pin,true ); // take reserved coordinate
@@ -96,6 +97,7 @@ function create_images( $repo ){
         		}else{
         		    if( ! in_array( ".", $pin, true ) ){ // make empty coord plce
         		        $pin[] = ".";
+						$vin[] = ".";
         		    }
         		    $coord[$nr] = array_search( ".", $pin, true ); // take the first unused coordinate
         		    // do not allocate this place in array as this is already freed place
@@ -108,48 +110,11 @@ function create_images( $repo ){
         		        $pin[$x] = $p;
         		    }else{ // allcate new place into array
         		        $pin[] = $p;
+						$vin[] = ".";
         		    }
         		}
-        		//manage graph drawing sections
-        		$cross[$nr] = array(); // array of participating lines for this slice
-        		foreach( $parents as $p ){
-            		$crossf[] = $coord[$nr];
-            		$crossf[] = $nr;
-            		$crossf[] = array_search( $p, $pin, true );
-            		$crossf[] = $p; // store unknown y as parent sha for later replacement
-            		$countf++; // increase the unknown y counter
-            	}
-        		$cross[$nr] = $crossf; // the floating section
-        		$count[$nr] = $countf; // the floating unknown counter
-            	///echo $nr ." ". $countf ." | ". $commit . " | " .implode(" ", $parents) ."\n";
-        		//fill in the old pieces
-        		for( $i=$nr; $i>=0; $i-- ){
-        		    $y=-1;
-        		    if( ! is_array( $cross[$i] ) ) break;
-        		    while( in_array( $commit, $cross[$i], true ) == true ){
-        		        $y = array_search( $commit, $cross[$i], true );
-        		        $cross[$i][$y] = $nr;
-        		        $count[$i]--;
-        		    }
-    		        if( $count[$i] <= 0 ){
-    		            draw_slice( $dirname, count($pin), $coord[$i], $i, $cross[$i] ); // draw the slice as all the info is available
-    		            unset( $count[$i], $cross[$i] ); // free this as not needed anymore
-    		        }
-        		    if( $y < 0 ) break; // no more to fill in
-        		}
-        		// remove obsolete lines, the known lines are not carried around
-        		$crossf = $cross[$nr];
-        		$countf = $count[$nr];
-        		$i = 0;
-        		while( $i < count( $crossf ) ){ 
-            		if( is_numeric( $crossf[$i+3] ) && ! is_string( $crossf[$i+3] ) )
-            		{ // this is known line and it will not intersect with coming slices
-            		    array_splice( $crossf, $i, 4 );
-            		    continue;
-            		}
-            		$i = $i + 4;
-            	}
-            	//echo $nr ." ". $count[$nr] ." | ". $commit . " | " .implode(" ", $cross[$nr]) ."\n";
+				draw_slice( $dirname, $commit, $coord[$nr], $nr, $parents, $pin, $vin );
+				unset($vin);
         		//take next row
         		$nr = $nr +1;
         		unset($descriptor);
@@ -171,25 +136,72 @@ function create_images( $repo ){
 }
 
 // draw the graph slices
-function draw_slice( $dirname, $columns, $x, $y, $cross )
+function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 {
+
     $w = 11; $wo = 5;
     $h = 15; $ho = 7;
     $r = 8;
-    
+
+    $columns = count($pin);
+	$lin = array_fill(0,$columns,'-');
+
     $im = imagecreate( $w * $columns, $h );
     $cbg = imagecolorallocate( $im, 255, 255, 255 );
     $ctr = imagecolortransparent( $im, $cbg );
     $cmg = imagecolorallocate( $im, 0, 0, 200 );
     $cbl = imagecolorallocate( $im, 0, 0, 0 );
 
-    for( $i=0; $i<count($cross); $i=$i+4 ){
-        $x1 = $cross[$i+0] * $w + $wo;
-        $y1 = ($cross[$i+1]-$y) * $h + $ho;
-        $x2 = $cross[$i+2] * $w + $wo;
-        $y2 = ($cross[$i+3]-$y) * $h + $ho;
-        imageline( $im, $x1, $y1, $x2, $y2, $cmg );
-    }
+
+	for( $i=0; $i<$columns; $i++ ){
+		if( $vin[$i] == $commit ){
+			// small vertical
+			imageline( $im, $i * $w + $wo, $ho, $i * $w + $wo, 0, $cmg );
+		}
+		if( $pin[$i] != "." ){
+			// we have a parent
+			if( in_array($pin[$i],$parents,true) ){
+				// the parent is our parent
+				// draw the horisontal for it
+				imageline( $im, $i * $w + $wo, $ho, $x * $w + $wo, $ho, $cmg );
+				// draw the little vertical for it
+				imageline( $im, $i * $w + $wo, $ho, $i * $w + $wo, $h, $cmg );
+				// look if this is requested for the upper side
+				if( $vin[$i] == $pin[$i] ){
+					// small vertical for upper side
+					imageline( $im, $i * $w + $wo, $ho, $i * $w + $wo, 0, $cmg );
+				}
+				// mark the cell to have horisontal
+				$k = $x;
+				while( $k != $i ){
+					$lin[$k] = '#';
+					if( $k > $i ){ $k = $k-1; } else { $k = $k+1; }
+				}
+			}
+		}
+	}
+	/*if( $y == 17 ){
+		//header("Content-Type: text/plain");
+		echo implode( ",", $lin ) . "\n";
+		die();
+	}*/
+	// draw passthrough lines
+	for( $i=0; $i<$columns; $i++ ){
+		if( $pin[$i] != "." && ! in_array($pin[$i],$parents,true) ){
+			// it is not a parent for this node
+			// check if we have horisontal for this column
+			if( $lin[$i] == '#' ){
+				// draw pass-by junction
+				imagearc( $im, $i * $w + $wo, $ho, $r, $r, 270, 90, $cmg );
+				imageline( $im, $i * $w + $wo, 0, $i * $w + $wo, ($h - $r) / 2, $cmg );
+				imageline( $im, $i * $w + $wo, $h-($h - $r) / 2, $i * $w + $wo, $h, $cmg );
+			} else {
+				// draw vertical
+				imageline( $im, $i * $w + $wo, 0, $i * $w + $wo, $h, $cmg );
+			}
+		}
+	}
+
     imagefilledellipse( $im, $x * $w + $wo, $ho, $r, $r, $cbl );
     $filename = $dirname."/tree-".$y.".png";
     imagepng( $im, $filename );
