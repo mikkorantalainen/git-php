@@ -139,7 +139,7 @@ function create_images( $repo ){
 function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 {
 
-    $w = 11; $wo = 5;
+    $w = 7; $wo = 3;
     $h = 15; $ho = 7;
     $r = 8;
 

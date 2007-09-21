@@ -938,6 +938,7 @@ $extEnscript = array
                 padding: 0px 0px 0px 7px;
                 border-width: 0px;
                 line-height: 1px;
+                font-size: 9px;
             }
 
             tr:hover { background-color:#cdccc6; }
