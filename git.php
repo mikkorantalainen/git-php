@@ -357,7 +357,7 @@ $extEnscript = array
         $repo = get_repo_path($proj);
         $c = git_commit( $proj, $commit );
         $out = array();
-        exec("GIT_DIR=$repo git-diff ".$c['parent'][0]." $commit | enscript --language=html --color=1 --highlight=diffu -o - | sed -n \"/<PRE/,/<\\/PRE/p\"  ", &$out);
+        exec("GIT_DIR=$repo git-diff ".$c['parent']." $commit | enscript --language=html --color=1 --highlight=diffu -o - | sed -n \"/<PRE/,/<\\/PRE/p\"  ", &$out);
         echo "<div class=\"gitcode\">\n";
         echo implode("\n",$out);
         echo "</div>\n";
@@ -396,7 +396,7 @@ $extEnscript = array
             $c = git_commit($repo, $order[$i]);
             $date = date("n/j/y G:i", (int)$c['date']);
             $cid = $order[$i];
-            $pid = $c['parent'][0];
+            $pid = $c['parent'];
             $mess = short_desc($c['message'], 40);
             $auth = short_desc($c['author'], 25);
             if( $pid == "" )
@@ -588,7 +588,7 @@ $extEnscript = array
         		$commit["commit_id"] = $d[0];
         		break;
         	case "parents":
-        		$commit["parent"] = $d;
+        		$commit["parent"] = $d[0];
         		break;
         	case "tree":
         		$commit["tree"] = $d[0];
@@ -721,9 +721,9 @@ $extEnscript = array
 
     function write_rss2()   {
         $proj = $_GET['p'];
-        $repo = get_repo_path($proj);
+        //$repo = get_repo_path($proj);
         $link = "http://{$_SERVER['HTTP_HOST']}".sanitized_url()."p=$proj";
-        $c = git_commit($repo, "HEAD");
+        $c = git_commit($proj, "HEAD");
 
         header("Content-type: text/xml", true);
         
@@ -752,8 +752,8 @@ $extEnscript = array
                 <description><?php echo $c['message'] ?></description>
                 <content><?php echo $c['message'] ?></content>
             </item>
-            <?php $c = git_commit($repo, $c['parent'][0]);
-                $link = "http://{$_SERVER['HTTP_HOST']}".sanitized_url()."p=$proj&amp;a=commitdiff&amp;h={$c['commit_id']}&amp;hb={$c['parent']}";
+            <?php $c = git_commit($proj, $c['parent']);
+                $link = "http://{$_SERVER['HTTP_HOST']}".sanitized_url()."p=$proj&amp;a=commitdiff&amp;h={$c['commit_id']}";
                   endfor;
             ?>
         </channel>
