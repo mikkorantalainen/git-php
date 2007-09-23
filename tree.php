@@ -44,6 +44,8 @@ function create_images( $repo ){
             die();
         }
     }
+    chmod( $dirname, 0777 );
+    //chgrp( $dirname, intval(filegroup($repo_directory)) );
 
 
     $coord=array(); // holds X position in tree
@@ -217,8 +219,10 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 	}
 
     imagefilledellipse( $im, $x * $w + $wo, $ho, $r, $r, $cbl );
-    $filename = $dirname."/tree-".$y.".png";
+    $filename = $dirname."/graph-".$commit.".png";
     imagepng( $im, $filename );
+    chmod( $filename, 0777 );
+    //chgrp( $filename, intval(filegroup($repo_directory)) );
     //echo "$filename\n";
 }
 

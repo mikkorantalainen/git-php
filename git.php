@@ -404,7 +404,7 @@ $extEnscript = array
             else
                 $diff = "<a href=\"".sanitized_url()."p={$_GET['p']}&a=commitdiff&h=$cid\">diff</a>";
             echo "<tr><td>$date</td>";
-            echo "<td><img src=\"" . $cache_name . $repo. "/tree-".$i.".png\" /></td>";
+            echo "<td><img src=\"" . $cache_name . $repo. "/graph-".$cid.".png\" /></td>";
             echo "<td>{$auth}</td><td>$mess</td><td>$diff</td></tr>\n"; 
         }
         echo "</table></div>\n";
