@@ -59,9 +59,11 @@ function analyze_hierarchy( &$vin, &$pin, &$commit, &$coord, &$parents, &$nr ){
         // do not allocate this place in array as this is already freed place
     }
     //reserve place for parents
+    $pc=0;
     foreach( $parents as $p ){ 
-        if( in_array( $p, $pin, true ) ) continue; // the parent alredy has place
-        if( in_array( ".", $pin, true ) ){ // take first empty place from array
+        if( in_array( $p, $pin, true ) ){ $pc++; continue; } // the parent alredy has place
+        if( $pc == 0 ){ $pin[$coord[$nr]] = $p; $pc++; continue; } // try to keep the head straigth
+        if( in_array( ".", $pin, true ) ){ // take leftmost empty place from array
             $x = array_search( ".", $pin, true );
             $pin[$x] = $p;
         }else{ // allcate new place into array
