@@ -31,7 +31,7 @@
 //$rv=putenv( "PATH=/home/peeter/local/bin:/usr/local/bin:/usr/bin:/bin:/usr/bin/X11" );
 //create_images( "git-git.git" );
 
-function create_images( $repo ){
+function create_images( $repo, $page, $lines ){
 	global $repo_directory, $cache_directory;
 	
     $order=array(); // the commit sha-s
@@ -76,7 +76,8 @@ function create_images( $repo ){
         $parents=array();
         foreach( $out as $line )
         {
-            // tking the data descriptor
+            if( $nr > $page + $lines ) return $order; // break the image creation if more is not needed
+            // taking the data descriptor
             unset($d);
         	$d = explode( " ", $line );
         	$descriptor = $d[0];
@@ -90,7 +91,7 @@ function create_images( $repo ){
         		$parents=$d;
         		break;
         	case "endrecord":
-        		$order[$nr] = $commit;
+        		if($nr-$page >= 0) $order[$nr-$page] = $commit;
 				$vin = $pin;
         		// figure out the position of this node
         		if( in_array($commit,$pin,true) ){

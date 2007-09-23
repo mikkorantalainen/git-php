@@ -262,6 +262,8 @@ $extEnscript = array
 	function is_valid($token)
 	{
 		global $validargs, $failedarg;
+		if( is_numeric( $token ) ) // numeric arguments do not harm
+		    return true;
 		foreach($validargs as $va)
 		{
 			if( $va == $token )
@@ -384,15 +386,16 @@ $extEnscript = array
         echo "</div>\n";
     }
 
-    function html_shortlog($repo, $count)   {
+    function html_shortlog($repo, $lines)   {
         global $cache_name;
+        $page=0;
+        if( isset($_GET['pg']) )
+            $page=$_GET['pg'];
+        if( $page < 0 ) $page = 0;
         echo "<div class=\"imgtable\">\n";
         echo "<table cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n";
-        $order = create_images($repo);
-		$unlim=false;
-		if( isset($_GET['s']) && $_GET['s'] == "fullsize" )
-			$unlim=true;
-        for ($i = 0; (($i < $count) || $unlim) && ($order[$i]!= ""); $i++)  {
+        $order = create_images($repo,$page,$lines);
+        for ($i = 0; ($i < $lines) && ($order[$i]!= ""); $i++)  {
             $c = git_commit($repo, $order[$i]);
             $date = date("n/j/y G:i", (int)$c['date']);
             $cid = $order[$i];
@@ -408,8 +411,20 @@ $extEnscript = array
             echo "<td>{$auth}</td><td>$mess</td><td>$diff</td></tr>\n"; 
         }
         echo "</table></div>\n";
-		if( $unlim == false )
-			echo "<table><tr><td><a href=\"".sanitized_url()."p={$_GET['p']}&s=fullsize\">Get all commits</a> (".count($order)." rows)</td></tr></table>\n";
+        echo "<table>\n";
+		$n=0;
+		echo "<tr><td>";
+		for ($i = $page - 5*$lines; $n < 20; $i = $i + $lines/2 ){
+		    if( $i < 0 ) continue;
+		    if( $n>0 ) echo " | ";
+		    $n++;
+		    if( $i == $page )
+		        echo "<b>[".$i."]</b>\n";
+		    else
+		        echo "<a href=\"".sanitized_url()."p={$_GET['p']}&pg=".$i."\">".$i."</a>\n";
+		}
+		echo "</td></tr>\n";
+		echo "</table>\n";
     }
 
     function html_desc($repo)    {
