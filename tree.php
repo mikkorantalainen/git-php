@@ -31,13 +31,10 @@
 //$rv=putenv( "PATH=/home/peeter/local/bin:/usr/local/bin:/usr/bin:/bin:/usr/bin/X11" );
 //create_images( "git-git.git" );
 
-function create_images( $repo, $page, $lines ){
+function create_cache_directory( $repo ){
 	global $repo_directory, $cache_directory;
+	$dirname=$cache_directory.$repo;
 	
-    $order=array(); // the commit sha-s
-    $coord=array(); // x coordinate of the item, y is the index
-
-    $dirname=$cache_directory.$repo;
     if( ! is_dir($dirname) ){
         if( ! mkdir($dirname) ){
             echo "Error by making directory $dirname\n";
@@ -46,8 +43,128 @@ function create_images( $repo, $page, $lines ){
     }
     chmod( $dirname, 0777 );
     //chgrp( $dirname, intval(filegroup($repo_directory)) );
+}
 
+function analyze_hierarchy( &$vin, &$pin, &$commit, &$coord, &$parents, &$nr ){
+    // figure out the position of this node
+    if( in_array($commit,$pin,true) ){
+        $coord[$nr] = array_search( $commit,$pin,true ); // take reserved coordinate
+        $pin[$coord[$nr]] = "."; // free the reserved coordinate
+    }else{
+        if( ! in_array( ".", $pin, true ) ){ // make empty coord plce
+            $pin[] = ".";
+    		$vin[] = ".";
+        }
+        $coord[$nr] = array_search( ".", $pin, true ); // take the first unused coordinate
+        // do not allocate this place in array as this is already freed place
+    }
+    //reserve place for parents
+    foreach( $parents as $p ){ 
+        if( in_array( $p, $pin, true ) ) continue; // the parent alredy has place
+        if( in_array( ".", $pin, true ) ){ // take first empty place from array
+            $x = array_search( ".", $pin, true );
+            $pin[$x] = $p;
+        }else{ // allcate new place into array
+            $pin[] = $p;
+    		$vin[] = ".";
+        }
+    }
+}
 
+function create_images_parents( $repo, &$retpage, $lines, $commit ){
+	global $repo_directory, $cache_directory;
+	$dirname=$cache_directory.$repo;
+    create_cache_directory( $repo );
+
+    $page=0; // the counter of made lines
+    $order=array(); // the commit sha-s
+    $coord=array(); // holds X position in tree
+    $pin=array( "." ); // holds reserved X positions in tree
+    $cross = array(); // lists rows that participate on the drawing of the slice as xstart,ystart,xend,yend,xstart,ystart,xend,yend,...
+    $count = array(); // holds number of open lines, if this becomes 0, the slice can be drawn
+    $crossf = array(); // the floating open lines section
+    $countf = 0; // the counter of unknown coordinates of floating section
+    $nr=0; // counts rows
+    $top=0; // the topmost undrawn slice
+    $todo=array( $commit );
+    $todoc=1;
+    do{
+        unset($cmd);
+        $cmd="GIT_DIR=$repo_directory$repo git-rev-list --all --full-history --date-order ";
+        $cmd .= "--max-count=1000 --skip=" .$nr ." ";
+        $cmd .= "--pretty=format:\"";
+        $cmd .= "parents %P%n";
+        $cmd .= "endrecord%n\"";
+   		unset($out);
+        $out = array();
+
+        //echo "$cmd\n";
+        $rrv= exec( $cmd, &$out );
+        //echo implode("\n",$out);
+                
+        // reading the commit tree
+        $descriptor="";
+        $commit="";
+        $parents=array();
+        foreach( $out as $line )
+        {
+            if( $page > $lines ) return $order; // break the image creation if more is not needed
+            if( $todoc <= 0 ) return $order; // break the image creation if more is not needed
+            // taking the data descriptor
+            unset($d);
+        	$d = explode( " ", $line );
+        	$descriptor = $d[0];
+        	$d = array_slice( $d, 1 );
+        	switch($descriptor)
+        	{
+        	case "commit":
+        		$commit=$d[0];
+        		break;
+        	case "parents":
+        		$parents=$d;
+        		break;
+        	case "endrecord":
+        		if( in_array($commit,$todo,true) ){ 
+        		    $order[$page] = $commit; 
+        		    $todoc--;
+        		    if($page==0){
+        		        $todo = array_merge( $todo, $parents );
+        		        $retpage = $nr;
+        		    }
+        		    $page++;
+        		    $todoc = $todoc + count( $parents );
+        		}
+                $vin = $pin;
+        		analyze_hierarchy( $vin, $pin, $commit, $coord, $parents, $nr );
+        		if( in_array($commit,$todo,true) )
+    				draw_slice( $dirname, $commit, $coord[$nr], $nr, $parents, $pin, $vin );
+				unset($vin);
+        		//take next row
+        		$nr = $nr +1;
+        		unset($descriptor);
+        		unset($commit);
+        		unset($parents);
+        		$parents=array();
+        		break;
+        	}
+        }
+    }while( count( $out ) > 0 );
+    unset($out);
+    $rows = $nr;
+    $cols = count($pin);
+    unset($pin,$nr);
+    //echo "number of items ".$rows."\n";
+    //echo "width ".$cols."\n";
+    
+    return $order;
+}
+
+function create_images( $repo, $page, $lines ){
+	global $repo_directory, $cache_directory;
+	$dirname=$cache_directory.$repo;
+    create_cache_directory( $repo );
+	
+    $order=array(); // the commit sha-s
     $coord=array(); // holds X position in tree
     $pin=array( "." ); // holds reserved X positions in tree
     $cross = array(); // lists rows that participate on the drawing of the slice as xstart,ystart,xend,yend,xstart,ystart,xend,yend,...
@@ -92,30 +209,8 @@ function create_images( $repo, $page, $lines ){
         		break;
         	case "endrecord":
         		if($nr-$page >= 0) $order[$nr-$page] = $commit;
-				$vin = $pin;
-        		// figure out the position of this node
-        		if( in_array($commit,$pin,true) ){
-        		    $coord[$nr] = array_search( $commit,$pin,true ); // take reserved coordinate
-        		    $pin[$coord[$nr]] = "."; // free the reserved coordinate
-        		}else{
-        		    if( ! in_array( ".", $pin, true ) ){ // make empty coord plce
-        		        $pin[] = ".";
-						$vin[] = ".";
-        		    }
-        		    $coord[$nr] = array_search( ".", $pin, true ); // take the first unused coordinate
-        		    // do not allocate this place in array as this is already freed place
-        		}
-        		//reserve place for parents
-        		foreach( $parents as $p ){ 
-        		    if( in_array( $p, $pin, true ) ) continue; // the parent alredy has place
-        		    if( in_array( ".", $pin, true ) ){ // take first empty place from array
-        		        $x = array_search( ".", $pin, true );
-        		        $pin[$x] = $p;
-        		    }else{ // allcate new place into array
-        		        $pin[] = $p;
-						$vin[] = ".";
-        		    }
-        		}
+                $vin = $pin;
+        		analyze_hierarchy( $vin, $pin, $commit, $coord, $parents, $nr );
 				draw_slice( $dirname, $commit, $coord[$nr], $nr, $parents, $pin, $vin );
 				unset($vin);
         		//take next row

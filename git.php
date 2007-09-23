@@ -236,8 +236,10 @@ $extEnscript = array
         html_title("Summary");
         html_summary($_GET['p']);
         html_spacer();
-        if ($_GET['a'] == "commitdiff")
+        if ($_GET['a'] == "commitdiff"){
+            html_title("Changes compared to red parent");
             html_diff($_GET['p'], $_GET['h']);
+        }
         else    {
             html_title("Files");
             html_browse($_GET['p']);
@@ -394,7 +396,10 @@ $extEnscript = array
         if( $page < 0 ) $page = 0;
         echo "<div class=\"imgtable\">\n";
         echo "<table cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n";
-        $order = create_images($repo,$page,$lines);
+        if( $_GET['a'] == "commitdiff" )
+            $order = create_images_parents($repo,$page,$lines,$_GET['h']);
+        else
+            $order = create_images($repo,$page,$lines);
         for ($i = 0; ($i < $lines) && ($order[$i]!= ""); $i++)  {
             $c = git_commit($repo, $order[$i]);
             $date = date("n/j/y G:i", (int)$c['date']);
@@ -409,12 +414,15 @@ $extEnscript = array
             echo "<tr><td>$date</td>";
             echo "<td><img src=\"" . $cache_name . $repo. "/graph-".$cid.".png\" /></td>";
             echo "<td>{$auth}</td><td>$mess</td><td>$diff</td></tr>\n"; 
+            if( $_GET['a'] == "commitdiff" ) echo "<tr><td>-</td></tr>\n";
         }
         echo "</table></div>\n";
         echo "<table>\n";
 		$n=0;
 		echo "<tr><td>";
-		for ($i = $page - 5*$lines; $n < 20; $i = $i + $lines/2 ){
+		for ($j = -7; $n < 15; $j++ ){
+		//for ($i = $page - 5*$lines; $n < 20; $i = $i + $lines/2 ){
+		    $i = $page + $j * $j * $j * $lines/2;
 		    if( $i < 0 ) continue;
 		    if( $n>0 ) echo " | ";
 		    $n++;
