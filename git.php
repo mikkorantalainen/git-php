@@ -25,8 +25,8 @@
 // | Author: Peeter Vois http://people.proekspert.ee/peeter/blog            |
 // +------------------------------------------------------------------------+ 
 
-    //require_once( 'tree1.php' ); // for debugging
-    require_once( 'tree.php' ); // for install
+    require_once( 'tree1.php' ); // for debugging
+    //require_once( 'tree.php' ); // for install
 
     global $title;
     global $repos; // list of repositories
@@ -112,7 +112,7 @@
         }	
 		// add commit tags
 		unset( $out );
-		exec("GIT_DIR=$repo_directory$repo git-rev-list --all --full-history --date-order --pretty=oneline | awk '{print \$1}'", &$out);
+		exec("GIT_DIR=$repo_directory$repo git-rev-list --full-history --all --date-order --pretty=oneline | awk '{print \$1}'", &$out);
 		foreach ($out as $line)
 		{
 			$validargs[] = $line;
@@ -400,6 +400,8 @@ $extEnscript = array
             $order = create_images_parents($repo,$page,$lines,$_GET['h']);
         else
             $order = create_images($repo,$page,$lines);
+		$branches=git_parse($repo, "branches" );
+		$tags=git_parse($repo, "tags");
         for ($i = 0; ($i < $lines) && ($order[$i]!= ""); $i++)  {
             $c = git_commit($repo, $order[$i]);
             $date = date("n/j/y G:i", (int)$c['date']);
@@ -421,7 +423,6 @@ $extEnscript = array
 		$n=0;
 		echo "<tr><td>";
 		for ($j = -7; $n < 15; $j++ ){
-		//for ($i = $page - 5*$lines; $n < 20; $i = $i + $lines/2 ){
 		    $i = $page + $j * $j * $j * $lines/2;
 		    if( $i < 0 ) continue;
 		    if( $n>0 ) echo " | ";
@@ -433,7 +434,40 @@ $extEnscript = array
 		}
 		echo "</td></tr>\n";
 		echo "</table>\n";
-    }
+		if( $_GET['a'] != "commitdiff" ){
+			echo "<div class=\"gitbrowse\">\n";
+			echo "<table>\n";			
+			echo "<tr><td> <b>branches:</b>\n";
+			foreach( $branches as $br ){
+				echo "<a class=\"blob\" href=\"".sanitized_url()."p={$_GET['p']}&br=".$br['commit']."\">".$br['name']."</a> | \n";
+			}
+			echo "</td></tr>\n";
+			echo "<tr><td> <b>tags:</b>\n";
+			foreach( $tags as $br ){
+				echo "<a class=\"blob\" href=\"".sanitized_url()."p={$_GET['p']}&br=".$br['commit']."\">".$br['name']."</a> | \n";
+			}
+			echo "</td></tr>\n";
+ 			echo "</table>\n";
+			echo "</div>\n";
+		}
+}
+
+function git_parse($repo, $what ){
+	global $repo_directory;
+	$cmd1="GIT_DIR=$repo_directory$repo git-rev-parse  --".$what."  ";
+	$cmd2="GIT_DIR=$repo_directory$repo git-rev-parse  --symbolic --".$what."  ";
+	$out1 = array();
+	$out2 = array();
+	$branches=array();
+	exec( $cmd1, &$out1 );
+	exec( $cmd2, &$out2 );
+	for( $i=0; $i < count( $out1 ); $i++ ){
+		$br['commit'] = $out1[$i];
+		$br['name'] = $out2[$i];
+		$branches[] = $br;
+	}
+	return  $branches;
+}
 
     function html_desc($repo)    {
         
