@@ -72,7 +72,7 @@ function analyze_hierarchy( &$vin, &$pin, &$commit, &$coord, &$parents, &$nr ){
         }
     }
 	//reduce image width if possible
-	while( count($pin) > 1 )
+	while( count($pin) > ($coord[$nr]+1) )
 	{
 		$valpin = array_pop($pin);
 		$valvin = array_pop($vin);
