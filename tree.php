@@ -71,6 +71,109 @@ function analyze_hierarchy( &$vin, &$pin, &$commit, &$coord, &$parents, &$nr ){
     		$vin[] = ".";
         }
     }
+	//reduce image width if possible
+	while( count($pin) > 1 )
+	{
+		$valpin = array_pop($pin);
+		$valvin = array_pop($vin);
+		if( $valpin == "." && $valvin == "." ) continue;
+		$pin[] = $valpin;
+		$vin[] = $valvin;
+		break;
+	}
+}
+
+function create_images_starting( $repo, &$retpage, $lines, $commit_name ){
+
+	global $repo_directory, $cache_directory;
+	$dirname=$cache_directory.$repo;
+    create_cache_directory( $repo );
+	
+    $cmd="GIT_DIR=$repo_directory$repo git-rev-list ";
+    $cmd .= "--max-count=1 ".$commit_name;
+	unset($out);
+	$out = array();
+
+    //echo "$cmd\n";
+    $rrv= exec( $cmd, &$out );
+	$commit_start = $out[0];
+	//echo "$commit_start\n";
+
+    $page=-1; // the counter of made lines
+    $order=array(); // the commit sha-s
+    $coord=array(); // holds X position in tree
+    $pin=array( "." ); // holds reserved X positions in tree
+    $cross = array(); // lists rows that participate on the drawing of the slice as xstart,ystart,xend,yend,xstart,ystart,xend,yend,...
+    $count = array(); // holds number of open lines, if this becomes 0, the slice can be drawn
+    $crossf = array(); // the floating open lines section
+    $countf = 0; // the counter of unknown coordinates of floating section
+    $nr=0; // counts rows
+    $top=0; // the topmost undrawn slice
+    $todo=array( $commit );
+    $todoc=1;
+    do{
+        unset($cmd);
+        $cmd="GIT_DIR=$repo_directory$repo git-rev-list --all --full-history --date-order ";
+        $cmd .= "--max-count=1000 --skip=" .$nr ." ";
+        $cmd .= "--pretty=format:\"";
+        $cmd .= "parents %P%n";
+        $cmd .= "endrecord%n\"";
+   		unset($out);
+        $out = array();
+
+        //echo "$cmd\n";
+        $rrv= exec( $cmd, &$out );
+        //echo implode("\n",$out);
+                
+        // reading the commit tree
+        $descriptor="";
+        $commit="";
+        $parents=array();
+        foreach( $out as $line )
+        {
+            if( $page > $lines ) return $order; // break the image creation if more is not needed
+            // taking the data descriptor
+            unset($d);
+        	$d = explode( " ", $line );
+        	$descriptor = $d[0];
+        	$d = array_slice( $d, 1 );
+        	switch($descriptor)
+        	{
+        	case "commit":
+        		$commit=$d[0];
+        		break;
+        	case "parents":
+        		$parents=$d;
+        		break;
+        	case "endrecord":
+        		if( $page >=0 || $commit == $commit_start ){ 
+					$page++;
+        		    $order[$page] = $commit; 
+					if( $page == 0 ) $retpage = $nr;
+        		}
+                $vin = $pin;
+        		analyze_hierarchy( $vin, $pin, $commit, $coord, $parents, $nr );
+        		if( $page >= 0 )
+    				draw_slice( $dirname, $commit, $coord[$nr], $nr, $parents, $pin, $vin );
+				unset($vin);
+        		//take next row
+        		$nr = $nr +1;
+        		unset($descriptor);
+        		unset($commit);
+        		unset($parents);
+        		$parents=array();
+        		break;
+        	}
+        }
+    }while( count( $out ) > 0 );
+    unset($out);
+    $rows = $nr;
+    $cols = count($pin);
+    unset($pin,$nr);
+    //echo "number of items ".$rows."\n";
+    //echo "width ".$cols."\n";
+    
+    return $order;
 }
 
 function create_images_parents( $repo, &$retpage, $lines, $commit ){

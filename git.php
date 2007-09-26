@@ -25,8 +25,8 @@
 // | Author: Peeter Vois http://people.proekspert.ee/peeter/blog            |
 // +------------------------------------------------------------------------+ 
 
-    require_once( 'tree1.php' ); // for debugging
-    //require_once( 'tree.php' ); // for install
+    //require_once( 'tree1.php' ); // for debugging
+    require_once( 'tree.php' ); // for install
 
     global $title;
     global $repos; // list of repositories
@@ -117,18 +117,34 @@
 		{
 			$validargs[] = $line;
         }
+		// add branches and tahs
+		$tags=git_parse($repo, "branches" );
+		foreach( $tags as $tg )
+		{
+			$validargs[] = $tg['name'];
+		}
+		$tags=git_parse($repo, "tags");
+		foreach( $tags as $tg )
+		{
+			$validargs[] = $tg['name'];
+		}
+
 	}
 
 
 	// add some keywords to valid array
 	$validargs = array_merge( $validargs, array( 
 		"targz", "zip", "git_logo", "plain", "rss2",
-		"commitdiff",
-		"fullsize"
+		"commitdiff", "jump_to_tag", "GO"
 	));
 
 	// now, all arguments must be in validargs
 	foreach( $_GET as $value )
+	{
+		if( !is_valid($value) )
+			hacker_gaught();
+	}
+	foreach( $_POST as $value )
 	{
 		if( !is_valid($value) )
 			hacker_gaught();
@@ -233,7 +249,6 @@ $extEnscript = array
 
     if (isset($_GET['p']))  { 
         html_spacer();
-        html_title("Summary");
         html_summary($_GET['p']);
         html_spacer();
         if ($_GET['a'] == "commitdiff"){
@@ -264,6 +279,8 @@ $extEnscript = array
 	function is_valid($token)
 	{
 		global $validargs, $failedarg;
+		if( $token == "" ) // empty token is valid too
+			return true;
 		if( is_numeric( $token ) ) // numeric arguments do not harm
 		    return true;
 		foreach($validargs as $va)
@@ -289,9 +306,12 @@ $extEnscript = array
 
     function html_summary($proj)    {
         $repo = get_repo_path($proj);
+        html_summary_title($repo);
         html_desc($repo);
         if (!isset($_GET['t']) && !isset($_GET['b']))
             html_shortlog($proj, 20);
+		else
+            html_shortlog($proj, 5);
     }
 
     function html_browse($proj)   {
@@ -394,14 +414,25 @@ $extEnscript = array
         if( isset($_GET['pg']) )
             $page=$_GET['pg'];
         if( $page < 0 ) $page = 0;
-        echo "<div class=\"imgtable\">\n";
+        echo "</br><div class=\"imgtable\">\n";
         echo "<table cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n";
-        if( $_GET['a'] == "commitdiff" )
-            $order = create_images_parents($repo,$page,$lines,$_GET['h']);
-        else
-            $order = create_images($repo,$page,$lines);
-		$branches=git_parse($repo, "branches" );
-		$tags=git_parse($repo, "tags");
+		switch( $_GET['a'] ){
+		case "commitdiff":
+			$order = create_images_parents($repo,$page,$lines,$_GET['h']);
+			break;
+		case "jump_to_tag":
+			if( $_POST['tag'] != "" ) $start = $_POST['tag'];
+			else if( $_POST['branch'] != "" ) $start = $_POST['branch'];
+			else $start = "";
+			if( $start != "" ){
+				$order = create_images_starting($repo,$page,$lines,$start);
+				break;
+			}
+		default:
+			$order = create_images($repo,$page,$lines);
+			break;
+		}
+		echo "<tr height=\"20\"><th>Date</th><th>Graph</th><th>Commiter</th><th>Summary</th><th>Actions</th></tr>\n";
         for ($i = 0; ($i < $lines) && ($order[$i]!= ""); $i++)  {
             $c = git_commit($repo, $order[$i]);
             $date = date("n/j/y G:i", (int)$c['date']);
@@ -418,10 +449,9 @@ $extEnscript = array
             echo "<td>{$auth}</td><td>$mess</td><td>$diff</td></tr>\n"; 
             if( $_GET['a'] == "commitdiff" ) echo "<tr><td>-</td></tr>\n";
         }
-        echo "</table></div>\n";
-        echo "<table>\n";
 		$n=0;
-		echo "<tr><td>";
+		echo "</table><table>";
+		echo "<tr height=\"20\"><td>";
 		for ($j = -7; $n < 15; $j++ ){
 		    $i = $page + $j * $j * $j * $lines/2;
 		    if( $i < 0 ) continue;
@@ -433,29 +463,36 @@ $extEnscript = array
 		        echo "<a href=\"".sanitized_url()."p={$_GET['p']}&pg=".$i."\">".$i."</a>\n";
 		}
 		echo "</td></tr>\n";
-		echo "</table>\n";
-		if( $_GET['a'] != "commitdiff" ){
-			echo "<div class=\"gitbrowse\">\n";
-			echo "<table>\n";			
-			echo "<tr><td> <b>branches:</b>\n";
-			foreach( $branches as $br ){
-				echo "<a class=\"blob\" href=\"".sanitized_url()."p={$_GET['p']}&br=".$br['commit']."\">".$br['name']."</a> | \n";
-			}
-			echo "</td></tr>\n";
-			echo "<tr><td> <b>tags:</b>\n";
-			foreach( $tags as $br ){
-				echo "<a class=\"blob\" href=\"".sanitized_url()."p={$_GET['p']}&br=".$br['commit']."\">".$br['name']."</a> | \n";
-			}
-			echo "</td></tr>\n";
- 			echo "</table>\n";
-			echo "</div>\n";
+        echo "</table></div>\n";
+}
+
+function html_summary_title($repo){
+	if( $_GET['a'] != "commitdiff" ){
+		$branches=git_parse($repo, "branches" );
+		$tags=git_parse($repo, "tags");
+		echo "<form method=post action=\"".sanitized_url()."p={$_GET['p']}&a=jump_to_tag\">";
+		echo "<div class=\"gittitle\">Summary :: ";
+		echo "<select name=\"branch\">";
+		echo "<option selected value=\"\">select a branch</option>";
+		foreach( $branches as $br ){
+			echo "<option value=\"".$br['name']."\">".$br['name']."</option>";
 		}
+		echo "</select> or <select name=\"tag\">";
+		echo "<option selected value=\"\">select a tag</option>";
+		foreach( $tags as $br ){
+			echo "<option value=\"".$br['name']."\">".$br['name']."</option>";
+		}
+		echo "</select> and press <input type=\"submit\" name=\"branch_or_tag\" value=\"GO\">";
+		echo "</div></form>";
+		return $rval;
+	} else {	
+		echo "<div class=\"gittitle\">Summary</div>\n";
+	}
 }
 
 function git_parse($repo, $what ){
-	global $repo_directory;
-	$cmd1="GIT_DIR=$repo_directory$repo git-rev-parse  --".$what."  ";
-	$cmd2="GIT_DIR=$repo_directory$repo git-rev-parse  --symbolic --".$what."  ";
+	$cmd1="GIT_DIR=$repo git-rev-parse  --".$what."  ";
+	$cmd2="GIT_DIR=$repo git-rev-parse  --symbolic --".$what."  ";
 	$out1 = array();
 	$out2 = array();
 	$branches=array();
@@ -861,8 +898,7 @@ function git_parse($repo, $what ){
     }
 
     function html_title($text = "&nbsp;")  {
-        echo "<div class=\"gittitle\">$text\n";
-        echo "</div>\n";
+        echo "<div class=\"gittitle\">".$text."</div>\n";
     }
 
     function html_breadcrumbs()  {
