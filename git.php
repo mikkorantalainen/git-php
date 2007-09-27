@@ -381,7 +381,8 @@ $extEnscript = array
 
     function html_diff($proj, $commit)    {
         $repo = get_repo_path($proj);
-        $c = git_commit( $proj, $commit );
+        //$c = git_commit( $proj, $commit );
+		$c['parent'] = $_GET['hb'];
         $out = array();
         exec("GIT_DIR=$repo git-diff ".$c['parent']." $commit | enscript --language=html --color=1 --highlight=diffu -o - | sed -n \"/<PRE/,/<\\/PRE/p\"  ", &$out);
         echo "<div class=\"gitcode\">\n";
@@ -442,10 +443,18 @@ $extEnscript = array
             $pid = $c['parent'];
             $mess = short_desc($c['message'], 40);
             $auth = short_desc($c['author'], 25);
-            if( $pid == "" )
+			if( $_GET['a'] == "commitdiff" ){
+				if( $_GET['h'] == $cid )
+					$diff = "diff";
+				else if( $_GET['hb'] == $cid )
+					$diff = "pare";
+				else
+					$diff = "<a href=\"".sanitized_url()."p={$_GET['p']}&a=commitdiff&h=$order[0]&hb=$cid\">pare</a>";
+			}
+			else if( $pid == "" )
                 $diff = "diff";
             else
-                $diff = "<a href=\"".sanitized_url()."p={$_GET['p']}&a=commitdiff&h=$cid\">diff</a>";
+                $diff = "<a href=\"".sanitized_url()."p={$_GET['p']}&a=commitdiff&h=$cid&hb=$pid\">diff</a>";
             echo "<tr><td>$date</td>";
             echo "<td><img src=\"" . $cache_name . $repo. "/graph-".$cid.".png\" /></td>";
             echo "<td>{$auth}</td><td>";
