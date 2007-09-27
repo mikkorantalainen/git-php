@@ -423,10 +423,10 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 	}
 
 	$fillcolor = $cci;
-	$color = $cbl;
+	$color = $cmg;
 	
 	if( in_array( $commit, $tags ) ) $fillcolor = $ctg;
-	if( in_array( $commit, $branches ) ) $color = $cbr;
+	if( in_array( $commit, $branches ) ) $color = $cbl;
 	
     imagefilledellipse( $im, $x * $w + $wo, $ho, $r, $r, $fillcolor );
 	imageellipse( $im, $x * $w + $wo, $ho, $r, $r, $color );
