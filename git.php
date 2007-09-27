@@ -38,6 +38,8 @@
     global $communication_link; // link for sending a message to owner
 	global $failedarg;
 	global $cache_name;
+	global $tags;
+	global $branches;
 
     /* Add the default css */
     $git_css = true;
@@ -118,15 +120,15 @@
 			$validargs[] = $line;
         }
 		// add branches and tahs
-		$tags=git_parse($repo, "branches" );
-		foreach( $tags as $tg )
+		$branches=git_parse($repo, "branches" );
+		foreach( array_keys($branches) as $tg )
 		{
-			$validargs[] = $tg['name'];
+			$validargs[] = $tg;
 		}
 		$tags=git_parse($repo, "tags");
-		foreach( $tags as $tg )
+		foreach( array_keys($tags) as $tg )
 		{
-			$validargs[] = $tg['name'];
+			$validargs[] = $tg;
 		}
 
 	}
@@ -409,7 +411,7 @@ $extEnscript = array
     }
 
     function html_shortlog($repo, $lines)   {
-        global $cache_name;
+        global $cache_name,$branches,$tags;
         $page=0;
         if( isset($_GET['pg']) )
             $page=$_GET['pg'];
@@ -446,7 +448,13 @@ $extEnscript = array
                 $diff = "<a href=\"".sanitized_url()."p={$_GET['p']}&a=commitdiff&h=$cid\">diff</a>";
             echo "<tr><td>$date</td>";
             echo "<td><img src=\"" . $cache_name . $repo. "/graph-".$cid.".png\" /></td>";
-            echo "<td>{$auth}</td><td>$mess</td><td>$diff</td></tr>\n"; 
+            echo "<td>{$auth}</td><td>";
+			if( in_array($cid,$branches) ) foreach( $branches as $symbolic => $hashic ) if( $hashic == $cid ) 
+				echo "<branches>".$symbolic."</branches> ";
+			if( in_array($cid,$tags) ) foreach( $tags as $symbolic => $hashic ) if( $hashic == $cid ) 
+				echo "<tags>".$symbolic."</tags> ";
+			echo $mess;
+			echo "</td><td>$diff</td></tr>\n"; 
             if( $_GET['a'] == "commitdiff" ) echo "<tr><td>-</td></tr>\n";
         }
 		$n=0;
@@ -467,20 +475,19 @@ $extEnscript = array
 }
 
 function html_summary_title($repo){
+	global $branches, $tags;
 	if( $_GET['a'] != "commitdiff" ){
-		$branches=git_parse($repo, "branches" );
-		$tags=git_parse($repo, "tags");
 		echo "<form method=post action=\"".sanitized_url()."p={$_GET['p']}&a=jump_to_tag\">";
 		echo "<div class=\"gittitle\">Summary :: ";
 		echo "<select name=\"branch\">";
 		echo "<option selected value=\"\">select a branch</option>";
-		foreach( $branches as $br ){
-			echo "<option value=\"".$br['name']."\">".$br['name']."</option>";
+		foreach( array_keys($branches) as $br ){
+			echo "<option value=\"".$br."\">".$br."</option>";
 		}
 		echo "</select> or <select name=\"tag\">";
 		echo "<option selected value=\"\">select a tag</option>";
-		foreach( $tags as $br ){
-			echo "<option value=\"".$br['name']."\">".$br['name']."</option>";
+		foreach( array_keys($tags) as $br ){
+			echo "<option value=\"".$br."\">".$br."</option>";
 		}
 		echo "</select> and press <input type=\"submit\" name=\"branch_or_tag\" value=\"GO\">";
 		echo "</div></form>";
@@ -491,19 +498,18 @@ function html_summary_title($repo){
 }
 
 function git_parse($repo, $what ){
-	$cmd1="GIT_DIR=$repo git-rev-parse  --".$what."  ";
-	$cmd2="GIT_DIR=$repo git-rev-parse  --symbolic --".$what."  ";
+	$cmd1="GIT_DIR=$repo git-rev-parse  --symbolic --".$what."  ";
 	$out1 = array();
-	$out2 = array();
-	$branches=array();
+	$bran=array();
 	exec( $cmd1, &$out1 );
-	exec( $cmd2, &$out2 );
 	for( $i=0; $i < count( $out1 ); $i++ ){
-		$br['commit'] = $out1[$i];
-		$br['name'] = $out2[$i];
-		$branches[] = $br;
+	    $cmd2="GIT_DIR=$repo git-rev-list ";
+    	$cmd2 .= "--max-count=1 ".$out1[$i];
+		$out2 = array();
+		exec( $cmd2, &$out2 );
+		$bran[$out1[$i]] = $out2[0];
 	}
-	return  $branches;
+	return  $bran;
 }
 
     function html_desc($repo)    {
@@ -1034,7 +1040,18 @@ function git_parse($repo, $what ){
                 line-height: 1px;
                 font-size: 9px;
             }
+			
+			div.imgtable tags{
+				color: #009900;
+				background-color: #FFFF00;
+			}
 
+			div.imgtable branches{
+				color: #CC6600;
+				background-color: #99FF99;
+			}
+			
+			
             tr:hover { background-color:#cdccc6; }
 
             div.gitbrowse a.blob {

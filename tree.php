@@ -341,6 +341,7 @@ function create_images( $repo, $page, $lines ){
 // draw the graph slices
 function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 {
+	global $tags, $branches;
 
     $w = 7; $wo = 3;
     $h = 15; $ho = 7;
@@ -355,6 +356,10 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
     $cmg = imagecolorallocate( $im, 0, 0, 200 );
     $cbl = imagecolorallocate( $im, 0, 0, 0 );
     $crd = imagecolorallocate( $im, 255, 0, 0 );
+	
+	$cci = imagecolorallocate( $im, 150, 150, 150 );
+	$ctg = imagecolorallocate( $im, 255, 255, 0 );
+	$cbr = imagecolorallocate( $im, 255, 0, 0 );
 
 
 	for( $i=0; $i<$columns; $i++ ){
@@ -362,7 +367,6 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 			// small vertical
 			imageline( $im, $i * $w + $wo, $ho, $i * $w + $wo, 0, $cmg );
 			imageline( $im, $i * $w + $wo-1, $ho, $i * $w + $wo-1, 0, $cmg );
-			//imageline( $im, $i * $w + $wo+1, $ho, $i * $w + $wo+1, 0, $cmg );
 		}
 		if( $pin[$i] != "." ){
 			// we have a parent
@@ -371,7 +375,6 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 				// draw the horisontal for it
 				imageline( $im, $i * $w + $wo, $ho, $x * $w + $wo, $ho, $cmg );
 				imageline( $im, $i * $w + $wo, $ho-1, $x * $w + $wo, $ho-1, $cmg );
-				//imageline( $im, $i * $w + $wo, $ho+1, $x * $w + $wo, $ho+1, $cmg );
 				// draw the little vertical for it
 				if( $pin[$i] == $parents[0] ){
     				imageline( $im, $i * $w + $wo, $ho, $i * $w + $wo, $h, $crd );
@@ -419,7 +422,14 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 		}
 	}
 
-    imagefilledellipse( $im, $x * $w + $wo, $ho, $r, $r, $cbl );
+	$fillcolor = $cci;
+	$color = $cbl;
+	
+	if( in_array( $commit, $tags ) ) $fillcolor = $ctg;
+	if( in_array( $commit, $branches ) ) $color = $cbr;
+	
+    imagefilledellipse( $im, $x * $w + $wo, $ho, $r, $r, $fillcolor );
+	imageellipse( $im, $x * $w + $wo, $ho, $r, $r, $color );
     $filename = $dirname."/graph-".$commit.".png";
     imagepng( $im, $filename );
     chmod( $filename, 0777 );
