@@ -145,7 +145,7 @@
 	// add some keywords to valid array
 	$validargs = array_merge( $validargs, array( 
 		"targz", "zip", "git_logo", "plain", "rss2",
-		"commitdiff", "jump_to_tag", "GO"
+		"commitdiff", "jump_to_tag", "GO", "HEAD"
 	));
 
 	// now, all arguments must be in validargs
@@ -528,7 +528,7 @@ $extEnscript = array
 			if( in_array($cid,$tags) ) foreach( $tags as $symbolic => $hashic ) if( $hashic == $cid ) 
 				echo "<tags>".$symbolic."</tags> ";
 			echo $mess;
-			echo "</td><td>$diff | $tree</td></tr>\n"; 
+			echo "</td><td>$diff | $tree | ".get_project_link($repo, "targz", $cid)." | ".get_project_link($repo, "zip", $cid)."</td></tr>\n"; 
             if( $_GET['a'] == "commitdiff" ) echo "<tr><td>-</td></tr>\n";
         }
 		$n=0;
@@ -718,14 +718,14 @@ function git_parse($repo, $what ){
         return date("D n/j/y G:i", (int)$date);
     }
 
-    function get_project_link($repo, $type = false)    {
+    function get_project_link($repo, $type = false, $tag="HEAD")    {
         $path = basename($repo);
         if (!$type)
             return "<a href=\"".sanitized_url()."p=$path\">$path</a>";
         else if ($type == "targz")
-            return "<a href=\"".sanitized_url()."p=$path&dl=targz\">.tar.gz</a>";
+            return "<a href=\"".sanitized_url()."p=$path&dl=targz&h=$tag\">.tar.gz</a>";
         else if ($type == "zip")
-            return "<a href=\"".sanitized_url()."p=$path&dl=zip\">.zip</a>";
+            return "<a href=\"".sanitized_url()."p=$path&dl=zip&h=$tag\">.zip</a>";
     }
 
     function git_commit($repo, $cid)  {
@@ -857,11 +857,13 @@ function git_parse($repo, $what ){
 
     function write_targz($repo) {
         $p = basename($repo);
+		$head = $_GET['h'];
         $proj = explode(".", $p);
         $proj = $proj[0]; 
-        exec("cd /tmp && git-clone $repo && rm -Rf /tmp/$proj/.git && tar czvf $proj.tar.gz $proj && rm -Rf /tmp/$proj");
+        exec("cd /tmp && git-clone $repo $proj && cd $proj && git-checkout $head && cd /tmp && rm -Rf /tmp/$proj/.git && tar czvf $proj-$head.tar.gz $proj");
+		exec("rm -Rf /tmp/$proj");
         
-        $filesize = filesize("/tmp/$proj.tar.gz");
+        $filesize = filesize("/tmp/$proj-$head.tar.gz");
         header("Pragma: public"); // required
         header("Expires: 0");
         header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
@@ -869,18 +871,20 @@ function git_parse($repo, $what ){
         header("Content-Transfer-Encoding: binary");
         header("Content-Type: application/x-tar-gz");
         header("Content-Length: " . $filesize);
-        header("Content-Disposition: attachment; filename=\"$proj.tar.gz\";" );
-        echo file_get_contents("/tmp/$proj.tar.gz");
+        header("Content-Disposition: attachment; filename=\"$proj-$head.tar.gz\";" );
+        echo file_get_contents("/tmp/$proj-$head.tar.gz");
         die();
     }
 
     function write_zip($repo) {
         $p = basename($repo);
+		$head = $_GET['h'];
         $proj = explode(".", $p);
         $proj = $proj[0]; 
-        exec("cd /tmp && git-clone $repo && rm -Rf /tmp/$proj/.git && zip -r $proj.zip $proj && rm -Rf /tmp/$proj");
+        exec("cd /tmp && git-clone $repo $proj && cd $proj && git-checkout $head && cd /tmp && rm -Rf /tmp/$proj/.git && zip -r $proj-$head.zip $proj");
+		exec("rm -Rf /tmp/$proj");
         
-        $filesize = filesize("/tmp/$proj.zip");
+        $filesize = filesize("/tmp/$proj-$head.zip");
         header("Pragma: public"); // required
         header("Expires: 0");
         header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
@@ -888,8 +892,8 @@ function git_parse($repo, $what ){
         header("Content-Transfer-Encoding: binary");
         header("Content-Type: application/x-zip");
         header("Content-Length: " . $filesize);
-        header("Content-Disposition: attachment; filename=\"$proj.zip\";" );
-        echo file_get_contents("/tmp/$proj.zip");
+        header("Content-Disposition: attachment; filename=\"$proj-$head.zip\";" );
+        echo file_get_contents("/tmp/$proj-$head.zip");
         die();
     }
 
