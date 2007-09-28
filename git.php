@@ -40,6 +40,8 @@
 	global $cache_name;
 	global $tags;
 	global $branches;
+	
+	global $keepurl; //the arguments that must be resent
 
     /* Add the default css */
     $git_css = true;
@@ -61,6 +63,8 @@
 	// end of server configuration
 	//-------------------------------------------------
 
+	$keepurl = array();
+	
     //repos could be made by an embeder script
     if (!is_array($repos))
         $repos = array();
@@ -105,21 +109,14 @@
 		// now load the repository into validargs
 		$repo=$_GET['p'];
 		$out=array();
-        exec("GIT_DIR=$repo_directory$repo git-ls-tree -r -t HEAD | sed -e 's/\t/ /g'", &$out);
-        foreach ($out as $line) 
-		{
-            $arr = explode(" ", $line);
-            $validargs[] = $arr[2]; // add the hash to valid array
-            $validargs[] = basename($arr[3]); // add the file name to valid array
-        }	
-		// add commit tags
+		// add commit and committree tags
 		unset( $out );
-		exec("GIT_DIR=$repo_directory$repo git-rev-list --full-history --all --date-order --pretty=oneline | awk '{print \$1}'", &$out);
+		exec("GIT_DIR=$repo_directory$repo git-rev-list --full-history --all --date-order --pretty=format:\"tree %T\" | awk '{print \$2}'", &$out);
 		foreach ($out as $line)
 		{
 			$validargs[] = $line;
-        }
-		// add branches and tahs
+        }		
+		// add branches and tags
 		$branches=git_parse($repo, "branches" );
 		foreach( array_keys($branches) as $tg )
 		{
@@ -130,6 +127,17 @@
 		{
 			$validargs[] = $tg;
 		}
+		// add files
+		unset($out);
+		$head="HEAD";
+		if( isset( $_GET['tr'] ) && is_valid( $_GET['tr'] ) ) $head = $_GET['tr'];
+        exec("GIT_DIR=$repo_directory$repo git-ls-tree -r -t $head | sed -e 's/\t/ /g'", &$out);
+        foreach ($out as $line) 
+		{
+            $arr = explode(" ", $line);
+            $validargs[] = $arr[2]; // add the hash to valid array
+            $validargs[] = basename($arr[3]); // add the file name to valid array
+        }	
 
 	}
 
@@ -151,7 +159,16 @@
 		if( !is_valid($value) )
 			hacker_gaught();
 	}
-    unset( $validargs );
+	
+	// fill keepurl fields
+	if( isset($_GET['tr']) ) 
+		$keepurl['tr']=$_GET['tr'];
+	if( isset($_GET['pg']) )
+		$keepurl['pg']=$_GET['pg'];
+	if( isset($_GET['tag']) )
+		$keepurl['tag']=$_GET['tag'];
+
+	unset( $validargs );
 	// end of validity check
 
 $extEnscript = array
@@ -254,10 +271,10 @@ $extEnscript = array
         html_summary($_GET['p']);
         html_spacer();
         if ($_GET['a'] == "commitdiff"){
-            html_title("Changes compared to red parent");
+            html_title("Changes");
             html_diff($_GET['p'], $_GET['h']);
         }
-        else    {
+        else if (isset($_GET['tr']))   {
             html_title("Files");
             html_browse($_GET['p']);
         }
@@ -294,6 +311,41 @@ $extEnscript = array
 		return false;
 	}
 
+	// this functions existance starts from php5
+	function array_diff_ukey( $array1, $array2 )
+	{
+	
+		$a1 = array_keys( $array1 );
+		$res = array();
+		
+		foreach( $a1 as $b ){
+			if( isset( $array2[$b] ) ) continue;
+			$res[$b] = $array1[$b];
+		}
+		return $res;
+	}
+	
+	// creates a href= beginning and keeps record with the carryon arguments
+	function html_ahref( $arguments, $class="" )
+	{
+		global $keepurl;
+		
+		$diff = array_diff_ukey( $keepurl, $arguments );
+		$ahref = "<a ";
+		if( $class != "" ) $ahref .= "class=\"$class\" ";
+		$ahref .= "href=\"".sanitized_url();
+		$a = array_keys( $diff );
+		foreach( $a as $d ){
+			if( $diff[$d] != "" ) $ahref .= "$d={$diff[$d]}&";
+		}
+		$a = array_keys( $arguments );
+		foreach( $a as $d ){
+			if( $arguments[$d] != "" ) $ahref .= "$d={$arguments[$d]}&";
+		}
+		$ahref .= "\">";
+		return $ahref;
+	}
+	
 	function hacker_gaught()
 	{
 		global $failedarg, $validargs;
@@ -313,7 +365,7 @@ $extEnscript = array
         if (!isset($_GET['t']) && !isset($_GET['b']))
             html_shortlog($proj, 20);
 		else
-            html_shortlog($proj, 5);
+            html_shortlog($proj, 4);
     }
 
     function html_browse($proj)   {
@@ -323,9 +375,11 @@ $extEnscript = array
         else    {
             if (isset($_GET['t']))
                 $tree = $_GET['t'];
-            else 
+            else if (isset($_GET['tr']))
+				$tree = $_GET['tr'];
+			else
                 $tree = "HEAD";
-             html_tree($proj, $tree); 
+            html_tree($proj, $tree); 
         }
 
     }
@@ -346,7 +400,7 @@ $extEnscript = array
         $repo = get_repo_path($proj);
         $out = array();
         $name=$_GET['n'];
-        $plain = "<a href=\"".sanitized_url()."p=$proj&dl=plain&h=$blob&n=$name\">plain</a>";
+        $plain = html_ahref( array( 'p'=>$proj, 'dl'=>"plain", 'h'=>$blob, 'n'=>$name ) ). "plain</a>";
         $ext=@$extEnscript[strrchr($name,".")];
         echo "<div style=\"float:right;padding:7px;\">$plain</div>\n";
         //echo "$ext";
@@ -399,10 +453,10 @@ $extEnscript = array
             $plain = "";
             $perm = perm_string($obj['perm']);
             if ($obj['type'] == 'tree')
-                $objlink = "<a href=\"".sanitized_url()."p=$proj&t={$obj['hash']}\">{$obj['file']}</a>\n";
+                $objlink = html_ahref( array( 'p'=>$proj, 'a'=>"jump_to_tag", 't'=>$obj['hash'] ) ) . $obj['file'] . "</a>\n";
             else if ($obj['type'] == 'blob')    {
-                $plain = "<a href=\"".sanitized_url()."p=$proj&dl=plain&h={$obj['hash']}&n={$obj['file']}\">plain</a>";
-                $objlink = "<a class=\"blob\" href=\"".sanitized_url()."p=$proj&b={$obj['hash']}&n={$obj['file']}\">{$obj['file']}</a>\n";
+                $plain = html_ahref( array( 'p'=>$proj, 'dl'=>plain, 'h'=>$obj['hash'], 'n'=>$obj['file'] ) ) . "plain</a>";
+                $objlink = html_ahref( array( 'p'=>$proj, 'a'=>"jump_to_tag", 'b'=>$obj['hash'], 'n'=>$obj['file'] ), "blob" ) . $obj['file'] . "</a>\n";
             }
 
             echo "<tr><td>$perm</td><td>$objlink</td><td>$plain</td></tr>\n";
@@ -424,9 +478,10 @@ $extEnscript = array
 			$order = create_images_parents($repo,$page,$lines,$_GET['h']);
 			break;
 		case "jump_to_tag":
-			if( $_POST['tag'] != "" ) $start = $_POST['tag'];
-			else if( $_POST['branch'] != "" ) $start = $_POST['branch'];
-			else $start = "";
+			if( isset($_POST['tag']) && $_POST['tag'] != "" ) $start = $_POST['tag'];
+			else if( isset($_POST['branch']) && $_POST['branch'] != "" ) $start = $_POST['branch'];
+			else if( isset($_GET['tag']) && $_GET['tag'] != "" ) $start = $_GET['tag'];
+			else $start = "HEAD";
 			if( $start != "" ){
 				$order = create_images_starting($repo,$page,$lines,$start);
 				break;
@@ -435,6 +490,9 @@ $extEnscript = array
 			$order = create_images($repo,$page,$lines);
 			break;
 		}
+		$treeid = "";
+		if( isset($_GET['tr']) ) $treeid = $_GET['tr'];
+		//echo $treeid;
 		echo "<tr height=\"20\"><th>Date</th><th>Graph</th><th>Commiter</th><th>Summary</th><th>Actions</th></tr>\n";
         for ($i = 0; ($i < $lines) && ($order[$i]!= ""); $i++)  {
             $c = git_commit($repo, $order[$i]);
@@ -443,18 +501,25 @@ $extEnscript = array
             $pid = $c['parent'];
             $mess = short_desc($c['message'], 40);
             $auth = short_desc($c['author'], 25);
+			$tid = $c['tree'];
+			// different ways of displaying diff
 			if( $_GET['a'] == "commitdiff" ){
 				if( $_GET['h'] == $cid )
 					$diff = "diff";
 				else if( $_GET['hb'] == $cid )
 					$diff = "pare";
 				else
-					$diff = "<a href=\"".sanitized_url()."p={$_GET['p']}&a=commitdiff&h=$order[0]&hb=$cid\">pare</a>";
+					$diff = html_ahref( array( 'p'=>$_GET['p'], 'a'=>"commitdiff", 'h'=>$order[0], 'hb'=>$cid, 'pg'=>"", 'tr'=>"" )) ."pare</a>";
 			}
 			else if( $pid == "" )
                 $diff = "diff";
             else
-                $diff = "<a href=\"".sanitized_url()."p={$_GET['p']}&a=commitdiff&h=$cid&hb=$pid\">diff</a>";
+                $diff = html_ahref( array( 'p'=>$_GET['p'], 'a'=>"commitdiff", 'h'=>$cid, 'hb'=>$pid, 'pg'=>"", 'tr'=>"" )) ."diff</a>";
+			// displaying tree
+			if( $tid == $treeid )
+				$tree = "tree";
+			else
+				$tree = html_ahref( array( 'p'=>$_GET['p'], 'a'=>"jump_to_tag", 'tag'=>$cid, 'tr'=>$tid, 't'=>$tid, 'pg'=>"" )) ."tree</a>";
             echo "<tr><td>$date</td>";
             echo "<td><img src=\"" . $cache_name . $repo. "/graph-".$cid.".png\" /></td>";
             echo "<td>{$auth}</td><td>";
@@ -463,7 +528,7 @@ $extEnscript = array
 			if( in_array($cid,$tags) ) foreach( $tags as $symbolic => $hashic ) if( $hashic == $cid ) 
 				echo "<tags>".$symbolic."</tags> ";
 			echo $mess;
-			echo "</td><td>$diff</td></tr>\n"; 
+			echo "</td><td>$diff | $tree</td></tr>\n"; 
             if( $_GET['a'] == "commitdiff" ) echo "<tr><td>-</td></tr>\n";
         }
 		$n=0;
@@ -477,7 +542,7 @@ $extEnscript = array
 		    if( $i == $page )
 		        echo "<b>[".$i."]</b>\n";
 		    else
-		        echo "<a href=\"".sanitized_url()."p={$_GET['p']}&pg=".$i."\">".$i."</a>\n";
+		        echo html_ahref( array( 'p'=>$_GET['p'], 'pg'=>$i, 'tr'=>"", 'tag'=>"" ) ) .$i."</a>\n";
 		}
 		echo "</td></tr>\n";
         echo "</table></div>\n";
