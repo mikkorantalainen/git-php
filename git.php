@@ -106,14 +106,6 @@
 		// now load the repository into validargs
 		$repo=$_GET['p'];
 		$out=array();
-		// add commit and committree tags
-		unset( $out );
-		exec("GIT_DIR=$repo_directory$repo git-rev-list --full-history --all --date-order --pretty=format:\"tree %T\" | awk '{print \$2}'", &$out);
-		foreach ($out as $line)
-		{
-			$validargs[] = $line;
-        }		
-		// add branches and tags
 		$branches=git_parse($repo, "branches" );
 		foreach( array_keys($branches) as $tg )
 		{
@@ -132,7 +124,7 @@
         foreach ($out as $line) 
 		{
             $arr = explode(" ", $line);
-            $validargs[] = $arr[2]; // add the hash to valid array
+            //$validargs[] = $arr[2]; // add the hash to valid array
             $validargs[] = basename($arr[3]); // add the file name to valid array
         }	
 
@@ -299,6 +291,8 @@ $extEnscript = array
 			return true;
 		if( is_numeric( $token ) ) // numeric arguments do not harm
 		    return true;
+		if( is_sha1( $token ) ) // we usually apply sha1 as arguments
+			return true;
 		foreach($validargs as $va)
 		{
 			if( $va == $token )
@@ -354,6 +348,20 @@ $extEnscript = array
 			echo "$va\n";
 		die();
 	}
+	
+	// checks if the argument is sha1
+	function is_sha1($val)
+	{
+		//if( !is_string($val) ) return false;
+		if( strlen($val) != 40 ) return false;
+		for( $i=0; $i<40; $i++ ){
+			if( strrpos( "00123456789abcdef", "{$val[$i]}" ) == FALSE ) return false;
+		}
+		return true;
+	}
+	
+	
+	// ******************************************************
 
     function html_summary($proj)    {
         $repo = get_repo_path($proj);
