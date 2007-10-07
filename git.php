@@ -133,7 +133,7 @@
 
 	// add some keywords to valid array
 	$validargs = array_merge( $validargs, array( 
-		"targz", "zip", "git_logo", "plain", "rss2",
+		"targz", "zip", "git_logo", "plain", "dlfile", "rss2",
 		"commitdiff", "jump_to_tag", "GO", "HEAD"
 	));
 
@@ -246,6 +246,8 @@ $extEnscript = array
             write_git_logo();
         else if ($_GET['dl'] == 'plain')
             write_plain();
+		else if ($_GET['dl'] == 'dlfile' )
+			write_dlfile();
         else if ($_GET['dl'] == 'rss2')
             write_rss2();
 
@@ -456,15 +458,17 @@ $extEnscript = array
         echo "<table>\n";
         foreach ($t as $obj)    {
             $plain = "";
+			$dlfile = "";
             $perm = perm_string($obj['perm']);
             if ($obj['type'] == 'tree')
                 $objlink = html_ahref( array( 'p'=>$proj, 'a'=>"jump_to_tag", 't'=>$obj['hash'] ) ) . $obj['file'] . "</a>\n";
             else if ($obj['type'] == 'blob')    {
-                $plain = html_ahref( array( 'p'=>$proj, 'dl'=>plain, 'h'=>$obj['hash'], 'n'=>$obj['file'] ) ) . "plain</a>";
+                $plain = html_ahref( array( 'p'=>$proj, 'dl'=>"plain", 'h'=>$obj['hash'], 'n'=>$obj['file'] ) ) . "plain</a>";
+				$dlfile = " | " . html_ahref( array( 'p'=>$proj, 'dl'=>"dlfile", 'h'=>$obj['hash'], 'n'=>$obj['file'] ) ) . "file</a>";
                 $objlink = html_ahref( array( 'p'=>$proj, 'a'=>"jump_to_tag", 'b'=>$obj['hash'], 'n'=>$obj['file'] ), "blob" ) . $obj['file'] . "</a>\n";
             }
 
-            echo "<tr><td>$perm</td><td>$objlink</td><td>$plain</td></tr>\n";
+            echo "<tr><td>$perm</td><td>$objlink</td><td>$plain$dlfile</td></tr>\n";
         }
         echo "</table>\n";
         echo "</div>\n";
@@ -841,7 +845,18 @@ function git_parse($repo, $what ){
         return $url;
     }
 
-    function write_plain()  {
+	function write_plain() {
+        $repo = get_repo_path($_GET['p']);
+        $name = $_GET['n'];
+        $hash = $_GET['h'];
+		$out = array();
+		exec("GIT_DIR=$repo git-cat-file blob $hash", &$out);
+		header("Content-Type: text/plain");
+		echo implode("\n",$out);
+		die();
+	}
+	
+    function write_dlfile()  {
         $repo = get_repo_path($_GET['p']);
         $name = $_GET['n'];
         $hash = $_GET['h'];
