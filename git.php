@@ -97,6 +97,15 @@
 
     sort($repos);
 
+	// check for cookie attack
+	if( isset($_COOKIE['validargs']) )
+	{
+		hacker_gaught("You have attack cookie named validargs[] set on your browser!\n");
+	}
+
+	// testing attack
+	//setcookie( 'validargs[]', 'value1 value2' );
+
 	// security test the arguments
 	if( isset($_GET['p']) )
 	{
@@ -346,13 +355,14 @@ $extEnscript = array
 		return $ahref;
 	}
 	
-	function hacker_gaught()
+	function hacker_gaught($mess="")
 	{
 		global $failedarg, $validargs;
 		header("Content-Type: text/plain");
 		echo "please, do not attack.\n";
 		echo "this site is not your enemy.\n\n";
-		echo "the failed argument is $failedarg.\n\n";
+		echo "the failed argument is $failedarg.\n";
+		echo "$mess \n";
 		foreach( $validargs as $va )
 			echo "$va\n";
 		die();
