@@ -1009,9 +1009,17 @@ function git_parse($repo, $what ){
         die();
     }
 
+	function hash_to_tag( $hash ){
+		global $tags;
+		if( in_array( $hash, $tags, true ) ){
+			return array_search( $hash, $tags, true );
+		}
+		return $hash;
+	}
+	
     function write_targz($repo) {
         $p = basename($repo);
-		$head = $_GET['h'];
+		$head = hash_to_tag($_GET['h']);
         $proj = explode(".", $p);
         $proj = $proj[0]; 
         exec("cd /tmp && git-clone ".escapeshellarg($repo)." ".escapeshellarg($proj)." && cd ".
@@ -1035,7 +1043,7 @@ function git_parse($repo, $what ){
 
     function write_zip($repo) {
         $p = basename($repo);
-		$head = $_GET['h'];
+		$head = hash_to_tag($_GET['h']);
         $proj = explode(".", $p);
         $proj = $proj[0]; 
         exec("cd /tmp && git-clone ".escapeshellarg($repo)." ".escapeshellarg($proj)." && cd ".
