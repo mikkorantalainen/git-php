@@ -1005,7 +1005,7 @@ function git_parse($repo, $what ){
         header("Content-Length: " . $filesize);
         header("Content-Disposition: attachment; filename=\"$name\";" );
         //$str = system("GIT_DIR=$repo git-cat-file blob $hash 2>/dev/null");
-        echo file_get_contents("/tmp/$hash.$name");
+		readfile( "/tmp/$hash.$name" );
         die();
     }
 
@@ -1037,7 +1037,7 @@ function git_parse($repo, $what ){
         header("Content-Type: application/x-tar-gz");
         header("Content-Length: " . $filesize);
         header("Content-Disposition: attachment; filename=\"$proj-$head.tar.gz\";" );
-        echo file_get_contents("/tmp/$proj-$head.tar.gz");
+        readfile("/tmp/$proj-$head.tar.gz");
         die();
     }
 
@@ -1060,7 +1060,7 @@ function git_parse($repo, $what ){
         header("Content-Type: application/x-zip");
         header("Content-Length: " . $filesize);
         header("Content-Disposition: attachment; filename=\"$proj-$head.zip\";" );
-        echo file_get_contents("/tmp/$proj-$head.zip");
+        readfile("/tmp/$proj-$head.zip");
         die();
     }
 
