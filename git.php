@@ -112,6 +112,8 @@
 		// check for valid repository name
 		if( !is_valid($_GET['p']) )
 			hacker_gaught();
+		// increase statistic counters
+		stat_inc_count( get_repo_path($_GET['p']) );
 		// now load the repository into validargs
 		$repo=$_GET['p'];
 		$out=array();
@@ -636,19 +638,21 @@ function git_parse($repo, $what ){
         echo "</table>\n";
     }
 
-    function html_home()    {
-
+    function html_home()    
+	{
         global $repos; 
+		
         echo "<table>\n";
-        echo "<tr><th>Project</th><th>Description</th><th>Owner</th><th>Last Changed</th><th>Download</th></tr>\n";
+        echo "<tr><th>Project</th><th>Description</th><th>Owner</th><th>Last Changed</th><th>Download</th><th>Hits</th></tr>\n";
         foreach ($repos as $repo)   {
+			$today = 0; $total = 0; stat_get_count( $repo, $today, $total );
             $desc = short_desc(file_get_contents("$repo/description")); 
             $owner = get_file_owner($repo);
             $last =  get_last($repo);
             $proj = get_project_link($repo);
             $dlt = get_project_link($repo, "targz");
             $dlz = get_project_link($repo, "zip");
-            echo "<tr><td>$proj</td><td>$desc</td><td>$owner</td><td>$last</td><td>$dlt | $dlz</td></tr>\n";
+            echo "<tr><td>$proj</td><td>$desc</td><td>$owner</td><td>$last</td><td>$dlt | $dlz</td><td> ( $today / $total ) </td></tr>\n";
         }
         echo "</table>";
     }
@@ -1345,20 +1349,81 @@ EOF;
     }
 	
 	// *****************************************************************************
-	// Graph tree drawing section
+	// statistics
 	//
-	function create_cache_directory( $repo ){
-	global $repo_directory, $cache_directory;
-	$dirname=$cache_directory.$repo;
+
+function stat_inc_count( $proj )
+{
+	$td = 0; $tt = 0;
+	stat_get_count( $proj, $td, $tt, true );
+}
 	
-    if( ! is_dir($dirname) ){
-        if( ! mkdir($dirname) ){
-            echo "Error by making directory $dirname\n";
+function stat_get_count( $proj, &$today, &$total, $inc=false )
+{
+	global $cache_name;
+	$rtoday = 0;
+	$rtotal = 0;
+	$now = floor(time()/24/60/60); // number of days since 1970
+	$fname = dirname($proj)."/".$cache_name."/counters-".basename($proj,".git");
+	$fd = 0;
+	
+	
+	//$fp1 = sem_get(fileinode($fname), 1);
+	//sem_acquire($fp1);
+	
+	$file = fopen( $fname, "r" ); // open or create the counter file
+	if( $file != FALSE ){
+		fseek( $file, 0 ); // rewind the file to beginning
+		// read out the counter value
+		fscanf( $file, "%d %d %d", $fd, $rtoday, $rtotal );
+		if( $fd != $now ){
+			$rtoday = 0;
+			$fd = $now;
+		}
+		if( $inc ){
+			$rtoday++;
+			$rtotal++;
+		}
+		fclose( $file );
+	}
+	$file = fopen( $fname, "w" ); // open or create the counter file	
+	// write the counter value
+	fseek( $file, 0 ); // rewind the file to beginning
+	fwrite( $file, "$fd $rtoday $rtotal\n" );
+	fclose( $file );
+	$today = $rtoday;
+	$total = $rtotal;	
+}
+	
+	// *****************************************************************************
+	// filesystem functions
+	//
+	
+function create_directory( $fullpath )
+{
+	if( ($fullpath[0] != '/') && ($fullpath[1] == 0) ){
+		echo "Wrong path name $fullpath\n";
+		die();
+	}
+    if( ! is_dir($fullpath) ){
+        if( ! mkdir($fullpath) ){
+            echo "Error by making directory $fullpath\n";
             die();
         }
     }
-    chmod( $dirname, 0777 );
-    //chgrp( $dirname, intval(filegroup($repo_directory)) );
+    chmod( $fullpath, 0777 );	
+}
+
+	
+	// *****************************************************************************
+	// Graph tree drawing section
+	//
+function create_cache_directory( $repo )
+{
+	global $repo_directory, $cache_directory;
+	$dirname=$cache_directory.$repo;
+	
+    create_directory( $dirname );
 }
 
 function analyze_hierarchy( &$vin, &$pin, &$commit, &$coord, &$parents, &$nr ){
