@@ -113,7 +113,8 @@
 		if( !is_valid($_GET['p']) )
 			hacker_gaught();
 		// increase statistic counters
-		stat_inc_count( get_repo_path($_GET['p']) );
+		if( $_GET['dl'] != 'rss2' )
+			stat_inc_count( get_repo_path($_GET['p']) );
 		// now load the repository into validargs
 		$repo=$_GET['p'];
 		$out=array();
