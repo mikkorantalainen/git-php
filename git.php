@@ -113,7 +113,8 @@
 		if( !is_valid($_GET['p']) )
 			hacker_gaught();
 		// increase statistic counters
-		if( $_GET['dl'] != 'rss2' )
+		if( $_GET['dl'] != 'rss2' ) // do not count the rss2 requests
+		if( (floor(time()/15/60)-intval($_GET['tm'])) < 4 ) // do not count the one hour session
 			stat_inc_count( get_repo_path($_GET['p']) );
 		// now load the repository into validargs
 		$repo=$_GET['p'];
@@ -163,12 +164,11 @@
 	}
 	
 	// fill keepurl fields
-	if( isset($_GET['tr']) ) 
-		$keepurl['tr']=$_GET['tr'];
-	if( isset($_GET['pg']) )
-		$keepurl['pg']=$_GET['pg'];
-	if( isset($_GET['tag']) )
-		$keepurl['tag']=$_GET['tag'];
+	$keepargs = array( 'tr', 'pg', 'tag' );
+	foreach( $keepargs as $idx ){
+		if( isset($_GET[$idx]) ) 
+			$keepurl[$idx]=$_GET[$idx];
+	}
 
 	unset( $validargs );
 	// end of validity check
@@ -354,6 +354,8 @@ $extEnscript = array
 		foreach( $a as $d ){
 			if( $arguments[$d] != "" ) $ahref .= "$d={$arguments[$d]}&";
 		}
+		$now = floor(time()/15/60); // one hour
+		$ahref .= "tm=$now";
 		$ahref .= "\">";
 		return $ahref;
 	}
@@ -871,9 +873,9 @@ function git_parse($repo, $what ){
         if (!$type)
             return "<a href=\"".sanitized_url()."p=$path\">$path</a>";
         else if ($type == "targz")
-            return "<a href=\"".sanitized_url()."p=$path&dl=targz&h=$tag\">.tar.gz</a>";
+            return html_ahref( array( 'p'=>$path, 'dl'=>'targz', 'h'=>$tag ) ).".tar.gz</a>";
         else if ($type == "zip")
-            return "<a href=\"".sanitized_url()."p=$path&dl=zip&h=$tag\">.zip</a>";
+            return html_ahref( array( 'p'=>$path, 'dl'=>'zip', 'h'=>$tag ) ).".zip</a>";
     }
 
     function git_commit($repo, $cid)  {
@@ -1162,7 +1164,7 @@ function git_parse($repo, $what ){
         $crumb = "<a href=\"".sanitized_url()."\">projects</a> / ";
 
         if (isset($_GET['p']))
-            $crumb .= "<a href=\"".sanitized_url()."p={$_GET['p']}\">{$_GET['p']}</a> / ";
+            $crumb .= html_ahref( array( 'p' => $_GET['p'] ) ) . $_GET['p'] ."</a> / ";
         
         if (isset($_GET['b']))
             $crumb .= "blob";
