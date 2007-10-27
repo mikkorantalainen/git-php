@@ -574,6 +574,7 @@ $extEnscript = array
             if( $_GET['a'] == "commitdiff" ) echo "<tr><td>-</td></tr>\n";
         }
 		$n=0;
+		$maxr=git_number_of_commits($repo);
 		echo "</table><table>";
 		echo "<tr height=\"20\"><td>";
 		for ($j = -7; $n < 15; $j++ ){
@@ -581,10 +582,14 @@ $extEnscript = array
 		    if( $i < 0 ) continue;
 		    if( $n>0 ) echo " | ";
 		    $n++;
+			if( $i > $maxr )
+				$i = $maxr;
 		    if( $i == $page )
 		        echo "<b>[".$i."]</b>\n";
 		    else
 		        echo html_ahref( array( 'p'=>$_GET['p'], 'pg'=>$i, 'tr'=>"", 'tag'=>"" ) ) .$i."</a>\n";
+			if( $i == $maxr )
+				break;
 		}
 		echo "</td></tr>\n";
         echo "</table></div>\n";
@@ -1164,7 +1169,7 @@ function git_parse($repo, $what ){
         $crumb = "<a href=\"".sanitized_url()."\">projects</a> / ";
 
         if (isset($_GET['p']))
-            $crumb .= html_ahref( array( 'p' => $_GET['p'] ) ) . $_GET['p'] ."</a> / ";
+            $crumb .= html_ahref( array( 'p'=>$_GET['p'], 'pg'=>"" ) ) . $_GET['p'] ."</a> / ";
         
         if (isset($_GET['b']))
             $crumb .= "blob";
@@ -1350,6 +1355,18 @@ EOF;
         echo "</style>\n";
         }
     }
+	
+function git_number_of_commits( $repo )
+{
+	global $repo_directory;
+	
+    $cmd="GIT_DIR=".escapeshellarg($repo_directory.$repo)." git-rev-list --all --full-history | grep -c \"\" ";
+	unset($out);
+	$out = array();
+    //echo "$cmd\n";
+    $rrv= exec( $cmd, &$out );
+	return intval( $out[0] );
+}
 	
 	// *****************************************************************************
 	// statistics
