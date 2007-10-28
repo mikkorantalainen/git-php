@@ -1392,7 +1392,10 @@ function stat_get_count( $proj, &$today, &$total, $inc=false )
 	//$fp1 = sem_get(fileinode($fname), 1);
 	//sem_acquire($fp1);
 	
-	$file = fopen( $fname, "r" ); // open or create the counter file
+	if( file_exists( $fname ) )
+		$file = fopen( $fname, "r" ); // open or create the counter file
+	else
+		$file = FALSE;
 	if( $file != FALSE ){
 		fseek( $file, 0 ); // rewind the file to beginning
 		// read out the counter value
@@ -1407,6 +1410,9 @@ function stat_get_count( $proj, &$today, &$total, $inc=false )
 		}
 		fclose( $file );
 	}
+	// uncomment the next lines to erase the counters
+	//$rtoday = 0;
+	//$rtotal = 0;	
 	$file = fopen( $fname, "w" ); // open or create the counter file	
 	// write the counter value
 	fseek( $file, 0 ); // rewind the file to beginning
