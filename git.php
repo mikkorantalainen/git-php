@@ -675,6 +675,7 @@ function git_parse($repo, $what ){
             echo "<head>\n";
             echo "\t<title>$title</title>\n";
             echo "\t<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\"/>\n";
+			echo "\t<meta NAME=\"ROBOTS\" CONTENT=\"NOFOLLOW\" />\n";
             echo "</head>\n";
             echo "<body>\n";
         }
