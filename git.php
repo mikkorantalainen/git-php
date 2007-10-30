@@ -115,7 +115,7 @@
 		// increase statistic counters
 		if( $_GET['dl'] != 'rss2' ) // do not count the rss2 requests
 		if( (floor(time()/15/60)-intval($_GET['tm'])) > 4 ) // do not count the one hour session
-		if( ((count($_GET) > 1) && isset($_GET['tm'])) || count($_GET) ) // prevent counting if no time set and more than one argument given
+		if( ((count($_GET) > 1) && isset($_GET['tm'])) || count($_GET) == 1 ) // prevent counting if no time set and more than one argument given
 			stat_inc_count( get_repo_path($_GET['p']) );
 		// now load the repository into validargs
 		$repo=$_GET['p'];
