@@ -1112,7 +1112,7 @@ function git_parse($repo, $what ){
                 <content><?php echo $c['message'] ?></content>
             </item>
             <?php $c = git_commit($proj, $c['parent']);
-                $link = "http://{$_SERVER['HTTP_HOST']}".sanitized_url()."p=$proj&amp;a=commitdiff&amp;h={$c['commit_id']}";
+                $link = "http://{$_SERVER['HTTP_HOST']}".sanitized_url()."p=$proj&amp;a=commitdiff&amp;h={$c['commit_id']}&amp;hb={$c['parent']}&amp;tm=0";
                   endfor;
             ?>
         </channel>
