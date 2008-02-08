@@ -270,6 +270,8 @@ $extEnscript = array
 			write_dlfile();
         else if ($_GET['dl'] == 'rss2')
             write_rss2();
+		else if ($_GET['dl'] == 'vali')
+			vote_a_project();
 
     html_header();
 
@@ -652,16 +654,17 @@ function git_parse($repo, $what ){
         global $repos; 
 		
         echo "<table>\n";
-        echo "<tr><th>Project</th><th>Description</th><th>Owner</th><th>Last Changed</th><th>Download</th><th>Hits</th></tr>\n";
+        echo "<tr><th>Project</th><th>Description</th><th>Owner</th><th>Last Changed</th><th>Download</th><th>Hits</th><th>Votes</th></tr>\n";
         foreach ($repos as $repo)   {
 			$today = 0; $total = 0; stat_get_count( $repo, $today, $total );
+			$votes = 0; get_votes( $repo, $votes );
             $desc = short_desc(file_get_contents("$repo/description")); 
             $owner = get_file_owner($repo);
             $last =  get_last($repo);
             $proj = get_project_link($repo);
             $dlt = get_project_link($repo, "targz");
             $dlz = get_project_link($repo, "zip");
-            echo "<tr><td>$proj</td><td>$desc</td><td>$owner</td><td>$last</td><td>$dlt | $dlz</td><td> ( $today / $total ) </td></tr>\n";
+            echo "<tr><td>$proj</td><td>$desc</td><td>$owner</td><td>$last</td><td>$dlt | $dlz</td><td> ( $today / $total ) </td><td> ! $votes</td></tr>\n";
         }
         echo "</table>";
     }
@@ -1379,14 +1382,38 @@ function stat_inc_count( $proj )
 	$td = 0; $tt = 0;
 	stat_get_count( $proj, $td, $tt, true );
 }
-	
+
 function stat_get_count( $proj, &$today, &$total, $inc=false )
+{
+	file_stat_get_count( $proj, $today, $total, $inc, 'counters' );
+}
+		
+	// *****************************************************************************
+	// filesystem functions
+	//
+	
+function create_directory( $fullpath )
+{
+	if( ($fullpath[0] != '/') && ($fullpath[1] == 0) ){
+		echo "Wrong path name $fullpath\n";
+		die();
+	}
+    if( ! is_dir($fullpath) ){
+        if( ! mkdir($fullpath) ){
+            echo "Error by making directory $fullpath\n";
+            die();
+        }
+    }
+    chmod( $fullpath, 0777 );	
+}
+
+function file_stat_get_count( $proj, &$today, &$total, $inc, $fbasename )
 {
 	global $cache_name;
 	$rtoday = 0;
 	$rtotal = 0;
 	$now = floor(time()/24/60/60); // number of days since 1970
-	$fname = dirname($proj)."/".$cache_name."/counters-".basename($proj,".git");
+	$fname = dirname($proj)."/".$cache_name."/".$fbasename."-".basename($proj,".git");
 	$fd = 0;
 	
 	
@@ -1421,25 +1448,6 @@ function stat_get_count( $proj, &$today, &$total, $inc=false )
 	fclose( $file );
 	$today = $rtoday;
 	$total = $rtotal;	
-}
-	
-	// *****************************************************************************
-	// filesystem functions
-	//
-	
-function create_directory( $fullpath )
-{
-	if( ($fullpath[0] != '/') && ($fullpath[1] == 0) ){
-		echo "Wrong path name $fullpath\n";
-		die();
-	}
-    if( ! is_dir($fullpath) ){
-        if( ! mkdir($fullpath) ){
-            echo "Error by making directory $fullpath\n";
-            die();
-        }
-    }
-    chmod( $fullpath, 0777 );	
 }
 
 	
@@ -1844,6 +1852,45 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
     chmod( $filename, 0777 );
     //chgrp( $filename, intval(filegroup($repo_directory)) );
     //echo "$filename\n";
+}
+
+	// *****************************************************************************
+	// SMS voting section
+	// http://fortumo.com/main/about_premium
+	//
+
+function get_votes( $proj, &$total )
+{
+	$td = 0;
+	file_stat_get_count( $proj, $td, $total, false, 'votes' );
+}
+
+function vote_a_project()
+{
+	// this function increases votes counter if a message comes from fortumo(tm)
+	global $repos;
+
+	if(!in_array($_SERVER["REMOTE_ADDR"], array("81.20.151.38", "81.20.148.122"))) 
+	{
+    	die("System error: unknown IP: ".$_SERVER["REMOTE_ADDR"]);
+  	}
+
+	$message = $_GET["message"]; // the message within SMS
+	// figure out the project. The project is written as order number to display it
+	if( $message >= 0 && $message < count( $proj ) )
+	{
+		$proj = get_repo_path($repos[$message]);
+	}
+
+	$td = 0; $tt = 0;
+	file_stat_get_count( $proj, $td, $tt, true, 'votes' );
+
+	die();
+}
+
+function how_to_vote_this_project()
+{
+	// this function explains the prizelist and how to send SMS
 }
 
 
