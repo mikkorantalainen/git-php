@@ -149,7 +149,8 @@
 	$validargs = array_merge( $validargs, array( 
 		"targz", "zip", "git_logo", "plain", "dlfile", "rss2",
 		"commitdiff", "jump_to_tag", "GO", "HEAD",
-		"icon_folder", "icon_plain", "icon_color"
+		"icon_folder", "icon_plain", "icon_color",
+		"vote", "htvote", "message", "sender", "country", "price", "currency", "service_id", "message_id", "keyword", "shortcode"
 	));
 
 	// now, all arguments must be in validargs
@@ -270,8 +271,10 @@ $extEnscript = array
 			write_dlfile();
         else if ($_GET['dl'] == 'rss2')
             write_rss2();
-		else if ($_GET['dl'] == 'vali')
+		else if ($_GET['dl'] == 'vote')
 			vote_a_project();
+		else if ($_GET['dl'] == 'htvote')
+			how_to_vote_this_project();
 
     html_header();
 
@@ -664,7 +667,8 @@ function git_parse($repo, $what ){
             $proj = get_project_link($repo);
             $dlt = get_project_link($repo, "targz");
             $dlz = get_project_link($repo, "zip");
-            echo "<tr><td>$proj</td><td>$desc</td><td>$owner</td><td>$last</td><td>$dlt | $dlz</td><td> ( $today / $total ) </td><td> ! $votes</td></tr>\n";
+			$htvote = get_project_link($repo, "htvote")." $votes </a>";
+            echo "<tr><td>$proj</td><td>$desc</td><td>$owner</td><td>$last</td><td>$dlt | $dlz</td><td> ( $today / $total ) </td><td>$htvote</td></tr>\n";
         }
         echo "</table>";
     }
@@ -886,6 +890,8 @@ function git_parse($repo, $what ){
             return html_ahref( array( 'p'=>$path, 'dl'=>'targz', 'h'=>$tag ) ).".tar.gz</a>";
         else if ($type == "zip")
             return html_ahref( array( 'p'=>$path, 'dl'=>'zip', 'h'=>$tag ) ).".zip</a>";
+		else if ($type == "htvote" )
+			return html_ahref( array( 'p'=>$path, 'dl'=>'htvote' ) );
     }
 
     function git_commit($repo, $cid)  {
@@ -1891,6 +1897,28 @@ function vote_a_project()
 function how_to_vote_this_project()
 {
 	// this function explains the prizelist and how to send SMS
+	global $repos;
+
+	$nr = 0;
+	$nr = array_search(get_repo_path($_GET['p']),$repos);
+
+    html_header();
+	echo "<center><H1> Voting for <u>".$_GET['p']."</u></H1>";
+	echo "To vote for this project, send a SMS with your mobile phone to the phone number in your country. The phone numbers are listed below.<p>\n";
+	echo "<center>The message is written inbetween [] :<br><b>[TXT VALI $nr]</b><p>\n";
+	echo "<H2>Phone numbers and prizes</H2>";
+	echo "<table cellspacing=10 rules=rows>";
+	echo "<tr><th>Country</th><th>Phone #</th><th>Prize</th></tr>\n";
+	echo "<tr><td>Soome</td><td>17211</td><td>1.00 EUR</td></tr>\n";
+	echo "<tr><td>Rootsi</td><td>72401</td><td>10.00 SEK</td></tr>\n";
+	echo "<tr><td>Norra</td><td>2223</td><td>5.00 NOK</td></tr>\n";
+	echo "<tr><td>Taani</td><td>1230</td><td>5.00 DKK</td></tr>\n";
+	echo "<tr><td>Eesti</td><td>13011</td><td>10.00 EEK</td></tr>\n";
+	echo "<tr><td>Läti</td><td>29024242 (Bite)<br> 29300242 (LMT)<br> 26000242 (Tele2)</td><td>0.75 LVL</td></tr>\n";
+	echo "<tr><td>Leedu</td><td>1337</td><td>2.00 LTL<br>\n";
+	echo "</table>\n";
+	echo "</center></body></html>";
+	die();
 }
 
 
