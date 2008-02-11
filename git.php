@@ -151,8 +151,12 @@
 	$validargs = array_merge( $validargs, array( 
 		"targz", "zip", "plain", "dlfile", "rss2",
 		"commitdiff", "jump_to_tag", "GO", "HEAD",
-		"vote", "htvote", "message", "sender", "country", "price", "currency", "service_id", "message_id", "keyword", "shortcode"
+		"htvote"
 		), $icondesc, $flagdesc );
+
+	// some simple methods do not need checking
+	if( $_GET['dl'] == 'vote' ) vote_a_project();
+
 
 	// now, all arguments must be in validargs
 	foreach( $_GET as $value )
@@ -267,8 +271,6 @@ $extEnscript = array
 			write_dlfile();
         else if ($_GET['dl'] == 'rss2')
             write_rss2();
-		else if ($_GET['dl'] == 'vote')
-			vote_a_project();
 		else if ($_GET['dl'] == 'htvote')
 			how_to_vote_this_project();
         else if ( in_array( $_GET['dl'], $flagdesc, true ) )
@@ -1752,15 +1754,18 @@ function vote_a_project()
     	die("System error: unknown IP: ".$_SERVER["REMOTE_ADDR"]);
   	}
 
-	$message = $_GET["message"]; // the message within SMS
-	// figure out the project. The project is written as order number to display it
-	if( $message >= 0 && $message < count( $proj ) )
+	if( isset($_GET["message"]) )
 	{
-		$proj = get_repo_path($repos[$message]);
-	}
+		$message = $_GET["message"]; // the message within SMS
+		// figure out the project. The project is written as order number to display it
+		if( $message >= 0 && $message < count( $repos ) )
+		{
+			$proj = $repos[$message];
+		}
 
-	$td = 0; $tt = 0;
-	file_stat_get_count( $proj, $td, $tt, true, 'votes' );
+		$td = 0; $tt = 0;
+		if( isset($proj) ) file_stat_get_count( $proj, $td, $tt, true, 'votes' );
+	}
 
 	die();
 }
@@ -1776,7 +1781,7 @@ function how_to_vote_this_project()
     html_header();
 	echo "<center><H1> Voting for <u>".$_GET['p']."</u></H1>";
 	echo "If you think that this project is great, needs more attention or you got rich with it ;) you are welcome to vote for this project. ";
-	echo "The vote costs some money that will compensate some of my time spent on the project. ";
+	echo "The vote costs some money that will hopefully preventing bots from raising hands. ";
 	echo "To vote for this project, send a SMS with your mobile phone to the phone number in your country. The phone numbers are listed below.<p>\n";
 	echo "<center>The message is written inbetween []<p>\n";
 	echo "<H2>Phone numbers and prizes</H2>";
