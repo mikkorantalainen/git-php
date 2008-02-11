@@ -1904,6 +1904,8 @@ function how_to_vote_this_project()
 
     html_header();
 	echo "<center><H1> Voting for <u>".$_GET['p']."</u></H1>";
+	echo "If you think that this project is great, needs more attention or you got rich with it ;) you are welcome to vote for this project. ";
+	echo "The vote costs some money that will compensate some of my time spent on the project. ";
 	echo "To vote for this project, send a SMS with your mobile phone to the phone number in your country. The phone numbers are listed below.<p>\n";
 	echo "<center>The message is written inbetween [] :<br><b>[TXT VALI $nr]</b><p>\n";
 	echo "<H2>Phone numbers and prizes</H2>";
