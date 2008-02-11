@@ -146,12 +146,12 @@
 
 
 	// add some keywords to valid array
+	$icondesc = array( 'git_logo', 'icon_folder', 'icon_plain', 'icon_color' );
 	$validargs = array_merge( $validargs, array( 
-		"targz", "zip", "git_logo", "plain", "dlfile", "rss2",
+		"targz", "zip", "plain", "dlfile", "rss2",
 		"commitdiff", "jump_to_tag", "GO", "HEAD",
-		"icon_folder", "icon_plain", "icon_color",
 		"vote", "htvote", "message", "sender", "country", "price", "currency", "service_id", "message_id", "keyword", "shortcode"
-	));
+		), $icondesc );
 
 	// now, all arguments must be in validargs
 	foreach( $_GET as $value )
@@ -260,11 +260,7 @@ $extEnscript = array
             write_zip(get_repo_path($_GET['p']));
         else if ($_GET['dl'] == 'plain')
             write_plain();
-        else if (
-			$_GET['dl'] == 'git_logo' ||
-			$_GET['dl'] == 'icon_folder' ||
-			$_GET['dl'] == 'icon_plain' ||
-			$_GET['dl'] == 'icon_color' )
+        else if ( in_array( $_GET['dl'], $icondesc, true ) )
             write_img_png($_GET['dl']);
 		else if ($_GET['dl'] == 'dlfile' )
 			write_dlfile();
