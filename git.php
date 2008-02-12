@@ -46,6 +46,9 @@
     /* Add the git logo in the footer */
     $git_logo = true;
 
+	/* Configure if the voting mechanism with SMS is active */
+	$git_sms_active = false;
+
     $title  = "git";
     $repo_index = "index.aux";
     $repo_directory = "/home/peeter/public_html/git/";
@@ -150,12 +153,7 @@
 	$validargs = array_merge( $validargs, array( 
 		"targz", "zip", "plain", "dlfile", "rss2",
 		"commitdiff", "jump_to_tag", "GO", "HEAD",
-		"htvote"
 		), $icondesc );
-
-	// some simple methods do not need checking
-	if( $_GET['dl'] == 'vote' ) vote_a_project();
-
 
 	// now, all arguments must be in validargs
 	foreach( $_GET as $value )
@@ -649,10 +647,17 @@ function git_parse($repo, $what ){
 
     function html_home()    
 	{
-        global $repos; 
+        global $repos, $git_sms_active; 
 		
-        echo "<table>\n";
-        echo "<tr><th>Project</th><th>Description</th><th>Owner</th><th>Last Changed</th><th>Download</th><th>Hits</th><th>Votes</th></tr>\n";
+        echo "<table>\n<tr>";
+		echo "<th>Project</th>";
+		echo "<th>Description</th>";
+		echo "<th>Owner</th>";
+		echo "<th>Last Changed</th>";
+		echo "<th>Download</th>";
+		echo "<th>Hits</th>";
+		if( $git_sms_active ) echo "<th>Votes</th>";
+        echo "</tr>\n";
         foreach ($repos as $repo)   {
 			$today = 0; $total = 0; stat_get_count( $repo, $today, $total );
 			$votes = 0; get_votes( $repo, $votes );
@@ -662,8 +667,8 @@ function git_parse($repo, $what ){
             $proj = get_project_link($repo);
             $dlt = get_project_link($repo, "targz");
             $dlz = get_project_link($repo, "zip");
-			$htvote = get_project_link($repo, "htvote")." $votes </a>";
-            echo "<tr><td>$proj</td><td>$desc</td><td>$owner</td><td>$last</td><td>$dlt | $dlz</td><td> ( $today / $total ) </td><td>$htvote</td></tr>\n";
+			$htvote = ""; if( $git_sms_active ) $htvote = "<td>".get_project_link($repo, "htvote")." $votes </a></td>";
+            echo "<tr><td>$proj</td><td>$desc</td><td>$owner</td><td>$last</td><td>$dlt | $dlz</td><td> ( $today / $total ) </td>$htvote</tr>\n";
         }
         echo "</table>";
     }
