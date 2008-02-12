@@ -1,0 +1,15 @@
+# files that do not place under source control
+
+*.o
+*.a
+*.elf
+*.proj
+*.prj
+*.*~
+*.?#?
+Makefile~
+
+#directories to ignore
+
+.snprj
+
