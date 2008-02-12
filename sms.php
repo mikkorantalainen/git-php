@@ -117,31 +117,6 @@
 		if( (floor(time()/15/60)-intval($_GET['tm'])) > 4 ) // do not count the one hour session
 		if( ((count($_GET) > 1) && isset($_GET['tm'])) || count($_GET) == 1 ) // prevent counting if no time set and more than one argument given
 			stat_inc_count( get_repo_path($_GET['p']) );
-		// now load the repository into validargs
-		$repo=$_GET['p'];
-		$out=array();
-		$branches=git_parse($repo, "branches" );
-		foreach( array_keys($branches) as $tg )
-		{
-			$validargs[] = $tg;
-		}
-		$tags=git_parse($repo, "tags");
-		foreach( array_keys($tags) as $tg )
-		{
-			$validargs[] = $tg;
-		}
-		// add files
-		unset($out);
-		$head="HEAD";
-		if( isset( $_GET['tr'] ) && is_valid( $_GET['tr'] ) ) $head = $_GET['tr'];
-        exec("GIT_DIR=".escapeshellarg($repo_directory.$repo)." git-ls-tree -r -t ".escapeshellarg($head)." | sed -e 's/\t/ /g'", &$out);
-        foreach ($out as $line) 
-		{
-            $arr = explode(" ", $line);
-            //$validargs[] = $arr[2]; // add the hash to valid array
-            $validargs[] = basename($arr[3]); // add the file name to valid array
-        }	
-
 	}
 
 
@@ -167,6 +142,61 @@
 		else if( $_GET['dl'] == 'vote' ) vote_a_project();
 
 	vote_a_project();
+	die();
+
+	// *************
+
+	// this function checks if a token is valid argument
+	function is_valid($token)
+	{
+		global $validargs, $failedarg;
+		if( $token == "" ) // empty token is valid too
+			return true;
+		if( is_numeric( $token ) ) // numeric arguments do not harm
+		    return true;
+		if( is_sha1( $token ) ) // we usually apply sha1 as arguments
+			return true;
+		foreach($validargs as $va)
+		{
+			if( $va == $token )
+				return true;
+		}
+		$failedarg = $token;
+		return false;
+	}
+
+	// checks if the argument is sha1
+	function is_sha1($val)
+	{
+		//if( !is_string($val) ) return false;
+		if( strlen($val) != 40 ) return false;
+		for( $i=0; $i<40; $i++ ){
+			if( strrpos( "00123456789abcdef", "{$val[$i]}" ) == FALSE ) return false;
+		}
+		return true;
+	}
+
+    function html_header()  {
+        global $title;
+        global $git_embed;
+        
+        if (!$git_embed)    {
+            echo "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n";
+            echo "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\n";
+            echo "<head>\n";
+            echo "\t<title>$title</title>\n";
+            echo "\t<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\"/>\n";
+			echo "\t<meta NAME=\"ROBOTS\" CONTENT=\"NOFOLLOW\" />\n";
+            echo "</head>\n";
+            echo "<body>\n";
+        }
+        /* Add rss2 link */
+        if (isset($_GET['p']))  {
+            echo "<link rel=\"alternate\" title=\"{$_GET['p']}\" href=\"".sanitized_url()."p={$_GET['p']}&dl=rss2\" type=\"application/rss+xml\" />\n";
+        }
+        echo "<div id=\"gitbody\">\n";
+        
+    }
 
 	// creates a href= beginning and keeps record with the carryon arguments
 	function html_ahref( $arguments, $class="" )
@@ -200,7 +230,7 @@
         else if ($type == "zip")
             return html_ahref( array( 'p'=>$path, 'dl'=>'zip', 'h'=>$tag ) ).".zip</a>";
 		else if ($type == "htvote" )
-			return html_ahref( array( 'p'=>$path, 'dl'=>'htvote' ) );
+			return '<a href="sms.php?p='.$path.'&dl=htvote>';
     }
 
     function get_repo_path($proj)   {
@@ -341,10 +371,23 @@ function vote_a_project()
 		if( $message >= 0 && $message < count( $repos ) )
 		{
 			$proj = $repos[$message];
+			$projbase = basename( $proj );
 		}
 
 		$td = 0; $tt = 0;
-		if( isset($proj) ) file_stat_get_count( $proj, $td, $tt, true, 'votes' );
+		if( isset($proj) ) 
+		{
+			file_stat_get_count( $proj, $td, $tt, true, 'votes' );
+			echo "You voted for $projbase";
+		}
+		else
+		{
+			echo "Sorry, no project with nr $message";
+		}
+	}
+	else
+	{
+		echo "Sorry, please specify a project number";
 	}
 
 	die();
