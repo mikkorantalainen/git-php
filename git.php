@@ -1776,12 +1776,20 @@ function how_to_vote_this_project()
 	global $repos;
 
 	$nr = 0;
-	$nr = array_search(get_repo_path($_GET['p']),$repos);
+	if( isset($_GET['p']) ) $nr = array_search(get_repo_path($_GET['p']),$repos);
 
     html_header();
-	echo "<center><H1> Voting for <u>".$_GET['p']."</u></H1>";
+	if( isset($_GET['p']) )
+	{
+		echo "<center><H1> Voting for <u>".$_GET['p']."</u></H1>";
+	}
+	else
+	{
+		echo "<center><H1>Pricelist</H1>";
+	}
 	echo "If you think that this project is great, needs more attention or you got rich with it ;) you are welcome to vote for this project. ";
-	echo "The vote costs some money that will hopefully preventing bots from raising hands. ";
+	echo "The vote costs some money that will hopefully prevent bots from raising hands. Notice that you vote here for a project only from your goodwill \n";
+	echo "and by voting you do not buy the software and do not get any additional rights. \n";
 	echo "To vote for this project, send a SMS with your mobile phone to the phone number in your country. The phone numbers are listed below.<p>\n";
 	echo "<center>The message is written inbetween []<p>\n";
 	echo "<H2>Phone numbers and prizes</H2>";
@@ -1790,11 +1798,14 @@ function how_to_vote_this_project()
 	echo "<tr><td><img src=\"".sanitized_url()."dl=finland.png\" style=\"border-width: 0px;\"/> Finland </td><td>17211</td><td>2.50 EUR</td><td>[TXT25 VALI $nr]</td></tr>\n";
 	echo "<tr><td><img src=\"".sanitized_url()."dl=sweden.png\" style=\"border-width: 0px;\"/> Sweden </td><td>72401</td><td>30.00 SEK</td><td>[TXT VALI $nr]</td></tr>\n";
 	echo "<tr><td><img src=\"".sanitized_url()."dl=norway.png\" style=\"border-width: 0px;\"/> Norway </td><td>2223</td><td>30.00 NOK</td><td>[TXT VALI $nr]</td></tr>\n";
-	echo "<tr><td><img src=\"".sanitized_url()."dl=denmark.png\" style=\"border-width: 0px;\"/> Denmark </td><td>1230</td><td>30.00 DKK</td><td>[TXT VALI $nr]</td></tr>\n";
+	//echo "<tr><td><img src=\"".sanitized_url()."dl=denmark.png\" style=\"border-width: 0px;\"/> Denmark </td><td>1230</td><td>30.00 DKK</td><td>[TXT VALI $nr]</td></tr>\n";
 	echo "<tr><td><img src=\"".sanitized_url()."dl=estonia.png\" style=\"border-width: 0px;\"/> Estonia </td><td>13011</td><td>35.00 EEK</td><td>[TXT VALI $nr]</td></tr>\n";
 	echo "<tr><td><img src=\"".sanitized_url()."dl=latvia.png\" style=\"border-width: 0px;\"/> Latvia </td><td>29024242 (Bite)<br> 29300242 (LMT)<br> 26000242 (Tele2)</td><td>0.95 LVL</td><td>[TXT VALI $nr]</td></tr>\n";
 	echo "<tr><td><img src=\"".sanitized_url()."dl=lithuania.png\" style=\"border-width: 0px;\"/> Lithuania </td><td>1337</td><td>5.00 LTL<td>[TXT VALI $nr]</td></tr>\n";
-	echo "</table>\n";
+	echo "</table><p>\n";
+	echo "Support: Peeter (dot) Vois (at) mail (dot) ee<p>\n";
+	echo "Powered by <a href=\"http://fortumo.com/\">fortumo.com</a><p>\n";
+
 	echo "</center></body></html>";
 	die();
 }
