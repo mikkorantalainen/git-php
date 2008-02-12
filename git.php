@@ -1799,7 +1799,7 @@ function how_to_vote_this_project()
 	echo "<tr><td><img src=\"".sanitized_url()."dl=sweden.png\" style=\"border-width: 0px;\"/> Sweden </td><td>72401</td><td>30.00 SEK</td><td>[TXT VALI $nr]</td></tr>\n";
 	echo "<tr><td><img src=\"".sanitized_url()."dl=norway.png\" style=\"border-width: 0px;\"/> Norway </td><td>2223</td><td>30.00 NOK</td><td>[TXT VALI $nr]</td></tr>\n";
 	//echo "<tr><td><img src=\"".sanitized_url()."dl=denmark.png\" style=\"border-width: 0px;\"/> Denmark </td><td>1230</td><td>30.00 DKK</td><td>[TXT VALI $nr]</td></tr>\n";
-	echo "<tr><td><img src=\"".sanitized_url()."dl=estonia.png\" style=\"border-width: 0px;\"/> Estonia </td><td>13011</td><td>35.00 EEK</td><td>[TXT VALI $nr]</td></tr>\n";
+	echo "<tr><td><img src=\"".sanitized_url()."dl=estonia.png\" style=\"border-width: 0px;\"/> Estonia </td><td>13015</td><td>35.00 EEK</td><td>[TXT VALI $nr]</td></tr>\n";
 	echo "<tr><td><img src=\"".sanitized_url()."dl=latvia.png\" style=\"border-width: 0px;\"/> Latvia </td><td>29024242 (Bite)<br> 29300242 (LMT)<br> 26000242 (Tele2)</td><td>0.95 LVL</td><td>[TXT VALI $nr]</td></tr>\n";
 	echo "<tr><td><img src=\"".sanitized_url()."dl=lithuania.png\" style=\"border-width: 0px;\"/> Lithuania </td><td>1337</td><td>5.00 LTL<td>[TXT VALI $nr]</td></tr>\n";
 	echo "</table><p>\n";
