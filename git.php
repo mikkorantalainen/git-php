@@ -1430,6 +1430,7 @@ function create_images_starting( $repo, &$retpage, $lines, $commit_name ){
         		analyze_hierarchy( $vin, $pin, $commit, $coord, $parents, $nr );
         		if( $page >= 0 )
     				draw_slice( $dirname, $commit, $coord[$nr], $nr, $parents, $pin, $vin );
+    			merge_slice( $coord[$nr], $parents, $pin );
 				unset($vin);
         		//take next row
         		$nr = $nr +1;
@@ -1518,6 +1519,7 @@ function create_images_parents( $repo, &$retpage, $lines, $commit ){
         		analyze_hierarchy( $vin, $pin, $commit, $coord, $parents, $nr );
         		if( in_array($commit,$todo,true) )
     				draw_slice( $dirname, $commit, $coord[$nr], $nr, $parents, $pin, $vin );
+    			merge_slice( $coord[$nr], $parents, $pin );
 				unset($vin);
         		//take next row
         		$nr = $nr +1;
@@ -1592,6 +1594,7 @@ function create_images( $repo, $page, $lines ){
                 $vin = $pin;
         		analyze_hierarchy( $vin, $pin, $commit, $coord, $parents, $nr );
 				draw_slice( $dirname, $commit, $coord[$nr], $nr, $parents, $pin, $vin );
+    			merge_slice( $coord[$nr], $parents, $pin );
 				unset($vin);
         		//take next row
         		$nr = $nr +1;
@@ -1615,6 +1618,18 @@ function create_images( $repo, $page, $lines ){
 
 // draw the graph slices
 $dr_sl_brcol = array();
+function merge_slice( $x, $parents, $pin )
+{
+    global $dr_sl_brcol;
+    $columns = count( $pin );
+    
+	$dr_sl_brcol[$x] = "."; // erase the bold branch of this column
+
+    for( $i = 0; $i < $columns; $i++ )
+        if( $pin[$i] == $parents[0] )
+		    $dr_sl_brcol[$i] = "#"; // the vertical becomes branch vertical
+}
+
 function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 {
 	global $tags, $branches, $dr_sl_brcol;
@@ -1637,8 +1652,6 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 	$ctg = imagecolorallocate( $im, 255, 255, 0 );
 	$cbr = imagecolorallocate( $im, 255, 0, 0 );
 
-	$par = -1; // the new parent branch column from this slice
-
 	for( $i=0; $i<$columns; $i++ ){
 		if( $vin[$i] == $commit ){
 			// small vertical
@@ -1653,9 +1666,8 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 				// the parent is our parent
 				// draw the horisontal for it
 				if( $pin[$i] == $parents[0] ){
-					imageline( $im, $i * $w + $wo, $ho, $x * $w + $wo, $ho, $cmg );
 					// merge has thin line, main parent has double hor line
-					$par = $i;
+					imageline( $im, $i * $w + $wo, $ho, $x * $w + $wo, $ho, $cmg );
 				}
 				imageline( $im, $i * $w + $wo, $ho-1, $x * $w + $wo, $ho-1, $cmg );
 				// draw the little vertical for it
@@ -1712,11 +1724,6 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 			}
 		}
 	}
-
-	$dr_sl_brcol[$x] = "."; // erase the bold branch of this column
-	if( $par >= 0 )
-		$dr_sl_brcol[$par] = "#"; // the vertical becomes branch vertical
-
 
 	$fillcolor = $cci;
 	$color = $cmg;
