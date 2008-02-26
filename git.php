@@ -1671,16 +1671,10 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 				}
 				imageline( $im, $i * $w + $wo, $ho-1, $x * $w + $wo, $ho-1, $cmg );
 				// draw the little vertical for it
-				if( $pin[$i] == $parents[0] ){
-    				imageline( $im, $i * $w + $wo, $ho, $i * $w + $wo, $h, $crd );
-    				imageline( $im, $i * $w + $wo-1, $ho, $i * $w + $wo-1, $h, $crd );
-    			}
-    			else{
-					if( $dr_sl_brcol[$i] == "#" ){
-	    				imageline( $im, $i * $w + $wo-1, $ho, $i * $w + $wo-1, $h, $cmg );
-					}
-    				imageline( $im, $i * $w + $wo, $ho, $i * $w + $wo, $h, $cmg );
-    			}
+				if( $pin[$i] == $parents[0] || $dr_sl_brcol[$i] == "#" ){
+    				imageline( $im, $i * $w + $wo-1, $ho, $i * $w + $wo-1, $h, $cmg );
+				}
+   				imageline( $im, $i * $w + $wo, $ho, $i * $w + $wo, $h, $cmg );
 				// look if this is requested for the upper side
 				if( $vin[$i] == $pin[$i] ){
 					// small vertical for upper side
