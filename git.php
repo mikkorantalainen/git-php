@@ -1614,9 +1614,10 @@ function create_images( $repo, $page, $lines ){
 }
 
 // draw the graph slices
+$dr_sl_brcol = array();
 function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 {
-	global $tags, $branches;
+	global $tags, $branches, $dr_sl_brcol;
 
     $w = 7; $wo = 3;
     $h = 15; $ho = 7;
@@ -1636,19 +1637,26 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 	$ctg = imagecolorallocate( $im, 255, 255, 0 );
 	$cbr = imagecolorallocate( $im, 255, 0, 0 );
 
+	$par = -1; // the new parent branch column from this slice
 
 	for( $i=0; $i<$columns; $i++ ){
 		if( $vin[$i] == $commit ){
 			// small vertical
 			imageline( $im, $i * $w + $wo, $ho, $i * $w + $wo, 0, $cmg );
-			imageline( $im, $i * $w + $wo-1, $ho, $i * $w + $wo-1, 0, $cmg );
+			if( $dr_sl_brcol[$i] == "#" ){
+				imageline( $im, $i * $w + $wo-1, $ho, $i * $w + $wo-1, 0, $cmg );
+			}
 		}
 		if( $pin[$i] != "." ){
 			// we have a parent
 			if( in_array($pin[$i],$parents,true) ){
 				// the parent is our parent
 				// draw the horisontal for it
-				imageline( $im, $i * $w + $wo, $ho, $x * $w + $wo, $ho, $cmg );
+				if( $pin[$i] == $parents[0] ){
+					imageline( $im, $i * $w + $wo, $ho, $x * $w + $wo, $ho, $cmg );
+					// merge has thin line, main parent has double hor line
+					$par = $i;
+				}
 				imageline( $im, $i * $w + $wo, $ho-1, $x * $w + $wo, $ho-1, $cmg );
 				// draw the little vertical for it
 				if( $pin[$i] == $parents[0] ){
@@ -1656,14 +1664,18 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
     				imageline( $im, $i * $w + $wo-1, $ho, $i * $w + $wo-1, $h, $crd );
     			}
     			else{
+					if( $dr_sl_brcol[$i] == "#" ){
+	    				imageline( $im, $i * $w + $wo-1, $ho, $i * $w + $wo-1, $h, $cmg );
+					}
     				imageline( $im, $i * $w + $wo, $ho, $i * $w + $wo, $h, $cmg );
-    				imageline( $im, $i * $w + $wo-1, $ho, $i * $w + $wo-1, $h, $cmg );
     			}
 				// look if this is requested for the upper side
 				if( $vin[$i] == $pin[$i] ){
 					// small vertical for upper side
+					if( $dr_sl_brcol[$i] == "#" ){
+						imageline( $im, $i * $w + $wo-1, $ho, $i * $w + $wo-1, 0, $cmg );
+					}
 					imageline( $im, $i * $w + $wo, $ho, $i * $w + $wo, 0, $cmg );
-					imageline( $im, $i * $w + $wo-1, $ho, $i * $w + $wo-1, 0, $cmg );
 				}
 				// mark the cell to have horisontal
 				$k = $x;
@@ -1681,21 +1693,30 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 			// check if we have horisontal for this column
 			if( $lin[$i] == '#' ){
 				// draw pass-by junction
-				if( $i < $x )
-				    imagearc( $im, $i * $w + $wo, $ho, $rj, $rj+1, 90, 270, $cmg );
-				else
-				    imagearc( $im, $i * $w + $wo, $ho, $rj, $rj+1, 270, 90, $cmg );
+				if( $dr_sl_brcol[$i] == "#" ){
+					imageline( $im, $i * $w + $wo-1, 0, $i * $w + $wo-1, ($h - $rj) / 2, $cmg );
+					imageline( $im, $i * $w + $wo-1, $h-($h - $rj) / 2, $i * $w + $wo-1, $h, $cmg );
+					if( $i < $x )
+					    imagearc( $im, $i * $w + $wo, $ho, $rj, $rj+1, 90, 270, $cmg );
+					else
+					    imagearc( $im, $i * $w + $wo, $ho, $rj, $rj+1, 270, 90, $cmg );
+				}
 				imageline( $im, $i * $w + $wo, 0, $i * $w + $wo, ($h - $rj) / 2, $cmg );
-				imageline( $im, $i * $w + $wo-1, 0, $i * $w + $wo-1, ($h - $rj) / 2, $cmg );
-				imageline( $im, $i * $w + $wo, $h-($h - $rj) / 2, $i * $w + $wo, $h, $cmg );
-				imageline( $im, $i * $w + $wo-1, $h-($h - $rj) / 2, $i * $w + $wo-1, $h, $cmg );
+				imageline( $im, $i * $w + $wo, $h-($h - $rj) / 2 -1, $i * $w + $wo, $h, $cmg );
 			} else {
 				// draw vertical
+				if( $dr_sl_brcol[$i] == "#" ){
+					imageline( $im, $i * $w + $wo-1, 0, $i * $w + $wo-1, $h, $cmg );
+				}
 				imageline( $im, $i * $w + $wo, 0, $i * $w + $wo, $h, $cmg );
-				imageline( $im, $i * $w + $wo-1, 0, $i * $w + $wo-1, $h, $cmg );
 			}
 		}
 	}
+
+	$dr_sl_brcol[$x] = "."; // erase the bold branch of this column
+	if( $par >= 0 )
+		$dr_sl_brcol[$par] = "#"; // the vertical becomes branch vertical
+
 
 	$fillcolor = $cci;
 	$color = $cmg;
