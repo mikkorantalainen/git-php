@@ -1326,6 +1326,7 @@ function analyze_hierarchy( &$vin, &$pin, &$commit, &$coord, &$parents, &$nr ){
         $coord[$nr] = array_search( $commit,$pin,true ); // take reserved coordinate
         $pin[$coord[$nr]] = "."; // free the reserved coordinate
     }else{
+        // this commit appears to be a head
         if( ! in_array( ".", $pin, true ) ){ // make empty coord plce
             $pin[] = ".";
     		$vin[] = ".";
@@ -1338,9 +1339,14 @@ function analyze_hierarchy( &$vin, &$pin, &$commit, &$coord, &$parents, &$nr ){
     foreach( $parents as $p ){ 
         if( in_array( $p, $pin, true ) ){ $pc++; continue; } // the parent alredy has place
         if( $pc == 0 ){ $pin[$coord[$nr]] = $p; $pc++; continue; } // try to keep the head straigth
-        if( in_array( ".", $pin, true ) ){ // take leftmost empty place from array
-            $x = array_search( ".", $pin, true );
-            $pin[$x] = $p;
+        if( in_array( ".", $pin, true ) ){ 
+            // 1. find nearest free place in the left side
+            $i = -1;
+            for( $i = $coord[$nr]-1; $pin[$i] != "." && $i >= 0; $i-- );
+            // 2. find neares free place in the right side
+            if( $i < 0 ) for( $i = $coord[$nr]; $pin[$i] != "."; $i++ );
+            //$x = array_search( ".", $pin, true );
+            $pin[$i] = $p;
         }else{ // allcate new place into array
             $pin[] = $p;
     		$vin[] = ".";
@@ -1388,7 +1394,7 @@ function create_images_starting( $repo, &$retpage, $lines, $commit_name ){
     $todoc=1;
     do{
         unset($cmd);
-        $cmd="GIT_DIR=".escapeshellarg($repo_directory.$repo)." git-rev-list --all --full-history --date-order ";
+        $cmd="GIT_DIR=".escapeshellarg($repo_directory.$repo)." git-rev-list --all --full-history --topo-order ";
         $cmd .= "--max-count=1000 --skip=" .escapeshellarg($nr) ." ";
         $cmd .= "--pretty=format:\"";
         $cmd .= "parents %P%n";
@@ -1471,7 +1477,7 @@ function create_images_parents( $repo, &$retpage, $lines, $commit ){
     $todoc=1;
     do{
         unset($cmd);
-        $cmd="GIT_DIR=".escapeshellarg($repo_directory.$repo)." git-rev-list --all --full-history --date-order ";
+        $cmd="GIT_DIR=".escapeshellarg($repo_directory.$repo)." git-rev-list --all --full-history --topo-order ";
         $cmd .= "--max-count=1000 --skip=" .escapeshellarg($nr) ." ";
         $cmd .= "--pretty=format:\"";
         $cmd .= "parents %P%n";
@@ -1557,7 +1563,7 @@ function create_images( $repo, $page, $lines ){
     $top=0; // the topmost undrawn slice
     do{
         unset($cmd);
-        $cmd="GIT_DIR=".escapeshellarg($repo_directory.$repo)." git-rev-list --all --full-history --date-order ";
+        $cmd="GIT_DIR=".escapeshellarg($repo_directory.$repo)." git-rev-list --all --full-history --topo-order ";
         $cmd .= "--max-count=1000 --skip=" .escapeshellarg($nr) ." ";
         $cmd .= "--pretty=format:\"";
         $cmd .= "parents %P%n";
