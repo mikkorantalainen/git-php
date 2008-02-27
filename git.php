@@ -1650,21 +1650,31 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
     $im = imagecreate( $w * $columns, $h );
     $cbg = imagecolorallocate( $im, 255, 255, 255 );
     $ctr = imagecolortransparent( $im, $cbg );
-    $cmg = imagecolorallocate( $im, 0, 0, 200 );
+    $cmg = imagecolorallocate( $im, 0, 0, 220 );
     $cbl = imagecolorallocate( $im, 0, 0, 0 );
-    $crd = imagecolorallocate( $im, 255, 0, 0 );
+    $crd = imagecolorallocate( $im, 180, 0, 0 );
+	$cgre= imagecolorallocate( $im, 0, 180, 0 );
 	
 	$cci = imagecolorallocate( $im, 150, 150, 150 );
 	$ctg = imagecolorallocate( $im, 255, 255, 0 );
 	$cbr = imagecolorallocate( $im, 255, 0, 0 );
 
+	$brlinecol = $cgre;
+	$melinecol = $cmg;
+	$cline = $cmg;
+
 	for( $i=0; $i<$columns; $i++ ){
+		if( $dr_sl_brcol[$i] == "#" ){
+			$cline = $brlinecol;
+		}else{
+			$cline = $melinecol;
+		}
 		if( $vin[$i] == $commit ){
 			// small vertical
-			imageline( $im, $i * $w + $wo, $ho, $i * $w + $wo, 0, $cmg );
 			if( $dr_sl_brcol[$i] == "#" ){
-				imageline( $im, $i * $w + $wo-1, $ho, $i * $w + $wo-1, 0, $cmg );
+				imageline( $im, $i * $w + $wo-1, $ho, $i * $w + $wo-1, 0, $cline );
 			}
+			imageline( $im, $i * $w + $wo, $ho, $i * $w + $wo, 0, $cline );
 		}
 		if( $pin[$i] != "." ){
 			// we have a parent
@@ -1673,21 +1683,24 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 				// draw the horisontal for it
 				if( $pin[$i] == $parents[0] ){
 					// merge has thin line, main parent has double hor line
-					imageline( $im, $i * $w + $wo, $ho, $x * $w + $wo, $ho, $cmg );
-				}
-				imageline( $im, $i * $w + $wo, $ho-1, $x * $w + $wo, $ho-1, $cmg );
+					$cline = $brlinecol;
+					imageline( $im, $i * $w + $wo, $ho, $x * $w + $wo, $ho, $cline );
+				} else { $cline = $melinecol; }
+				imageline( $im, $i * $w + $wo, $ho-1, $x * $w + $wo, $ho-1, $cline );
 				// draw the little vertical for it
 				if( $pin[$i] == $parents[0] || $dr_sl_brcol[$i] == "#" ){
-    				imageline( $im, $i * $w + $wo-1, $ho, $i * $w + $wo-1, $h, $cmg );
+					$cline = $brlinecol;
+    				imageline( $im, $i * $w + $wo-1, $ho, $i * $w + $wo-1, $h, $cline );
 				}
-   				imageline( $im, $i * $w + $wo, $ho, $i * $w + $wo, $h, $cmg );
+   				imageline( $im, $i * $w + $wo, $ho, $i * $w + $wo, $h, $cline );
 				// look if this is requested for the upper side
 				if( $vin[$i] == $pin[$i] ){
 					// small vertical for upper side
 					if( $dr_sl_brcol[$i] == "#" ){
-						imageline( $im, $i * $w + $wo-1, $ho, $i * $w + $wo-1, 0, $cmg );
-					}
-					imageline( $im, $i * $w + $wo, $ho, $i * $w + $wo, 0, $cmg );
+						$cline = $brlinecol;
+						imageline( $im, $i * $w + $wo-1, $ho, $i * $w + $wo-1, 0, $cline );
+					} else { $cline = $melinecol; }
+					imageline( $im, $i * $w + $wo, $ho, $i * $w + $wo, 0, $cline );
 				}
 				// mark the cell to have horisontal
 				$k = $x;
@@ -1700,36 +1713,41 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 	}
 	// draw passthrough lines
 	for( $i=0; $i<$columns; $i++ ){
+		if( $dr_sl_brcol[$i] == "#" ){
+			$cline = $brlinecol;
+		}else{
+			$cline = $melinecol;
+		}
 		if( $pin[$i] != "." && ! in_array($pin[$i],$parents,true) ){
 			// it is not a parent for this node
 			// check if we have horisontal for this column
 			if( $lin[$i] == '#' ){
 				// draw pass-by junction
 				if( $dr_sl_brcol[$i] == "#" ){
-					imageline( $im, $i * $w + $wo-1, 0, $i * $w + $wo-1, ($h - $rj) / 2, $cmg );
-					imageline( $im, $i * $w + $wo-1, $h-($h - $rj) / 2, $i * $w + $wo-1, $h, $cmg );
+					imageline( $im, $i * $w + $wo-1, 0, $i * $w + $wo-1, ($h - $rj) / 2, $cline );
+					imageline( $im, $i * $w + $wo-1, $h-($h - $rj) / 2, $i * $w + $wo-1, $h, $cline );
 					if( $i < $x )
-					    imagearc( $im, $i * $w + $wo, $ho, $rj, $rj+1, 90, 270, $cmg );
+					    imagearc( $im, $i * $w + $wo, $ho, $rj, $rj+1, 90, 270, $cline );
 					else
-					    imagearc( $im, $i * $w + $wo, $ho, $rj, $rj+1, 270, 90, $cmg );
+					    imagearc( $im, $i * $w + $wo, $ho, $rj, $rj+1, 270, 90, $cline );
 				}
-				imageline( $im, $i * $w + $wo, 0, $i * $w + $wo, ($h - $rj) / 2, $cmg );
-				imageline( $im, $i * $w + $wo, $h-($h - $rj) / 2 -1, $i * $w + $wo, $h, $cmg );
+				imageline( $im, $i * $w + $wo, 0, $i * $w + $wo, ($h - $rj) / 2, $cline );
+				imageline( $im, $i * $w + $wo, $h-($h - $rj) / 2 -1, $i * $w + $wo, $h, $cline );
 			} else {
 				// draw vertical
 				if( $dr_sl_brcol[$i] == "#" ){
-					imageline( $im, $i * $w + $wo-1, 0, $i * $w + $wo-1, $h, $cmg );
+					imageline( $im, $i * $w + $wo-1, 0, $i * $w + $wo-1, $h, $cline );
 				}
-				imageline( $im, $i * $w + $wo, 0, $i * $w + $wo, $h, $cmg );
+				imageline( $im, $i * $w + $wo, 0, $i * $w + $wo, $h, $cline );
 			}
 		}
 	}
 
-	$fillcolor = $cci;
+	$fillcolor = $ctr;
 	$color = $cmg;
 	
 	if( in_array( $commit, $tags ) ) $fillcolor = $ctg;
-	if( in_array( $commit, $branches ) ) $color = $cbl;
+	if( in_array( $commit, $branches ) ) $color = $crd;
 	
     imagefilledellipse( $im, $x * $w + $wo, $ho, $r, $r, $fillcolor );
 	imageellipse( $im, $x * $w + $wo, $ho, $r, $r, $color );
