@@ -1688,7 +1688,7 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
 				} else { $cline = $melinecol; }
 				imageline( $im, $i * $w + $wo, $ho-1, $x * $w + $wo, $ho-1, $cline );
 				// draw the little vertical for it
-				if( $pin[$i] == $parents[0] || $dr_sl_brcol[$i] == "#" ){
+				if( $pin[$i] == $parents[0] || $dr_sl_brcol[$i] == "#" && $i != $x ){
 					$cline = $brlinecol;
     				imageline( $im, $i * $w + $wo-1, $ho, $i * $w + $wo-1, $h, $cline );
 				}
