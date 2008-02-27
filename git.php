@@ -129,10 +129,11 @@
 
 	// add some keywords to valid array
 	$icondesc = array( 'git_logo', 'icon_folder', 'icon_plain', 'icon_color' );
+	$arrowdesc = array( 'none', 'up', 'down' );
 	$validargs = array_merge( $validargs, array( 
 		"targz", "zip", "plain", "dlfile", "rss2",
 		"commitdiff", "jump_to_tag", "GO", "HEAD",
-		), $icondesc );
+		), $icondesc, $arrowdesc );
 
 	// now, all arguments must be in validargs
 	foreach( $_GET as $value )
@@ -247,6 +248,8 @@ $extEnscript = array
 			write_dlfile();
         else if ($_GET['dl'] == 'rss2')
             write_rss2();
+		else if ( in_array( $_GET['dl'], $arrowdesc, true ) )
+			draw_arrow( $_GET['dl'] );
 
     html_header();
 
@@ -318,12 +321,19 @@ $extEnscript = array
 	// creates a href= beginning and keeps record with the carryon arguments
 	function html_ahref( $arguments, $class="" )
 	{
-		global $keepurl;
-		
-		$diff = array_diff_ukey( $keepurl, $arguments );
 		$ahref = "<a ";
 		if( $class != "" ) $ahref .= "class=\"$class\" ";
-		$ahref .= "href=\"".sanitized_url();
+		$ahref .= "href=\"";
+
+		return html_ref( $arguments, $ahref );
+	}
+
+	function html_ref( $arguments, $prefix )
+	{
+		global $keepurl;
+
+		$diff = array_diff_ukey( $keepurl, $arguments );
+		$ahref = $prefix.sanitized_url();
 		$a = array_keys( $diff );
 		foreach( $a as $d ){
 			if( $diff[$d] != "" ) $ahref .= "$d={$diff[$d]}&";
@@ -488,6 +498,8 @@ $extEnscript = array
     function html_shortlog($repo, $lines)   {
         global $cache_name,$branches,$tags;
         $page=0;
+		$shortc["top"] = array();
+		$shortc["bot"] = array();
         if( isset($_GET['pg']) )
             $page=$_GET['pg'];
         if( $page < 0 ) $page = 0;
@@ -495,7 +507,7 @@ $extEnscript = array
         echo "<table cellspacing=\"0\" cellpadding=\"0\" border=\"0\">\n";
 		switch( $_GET['a'] ){
 		case "commitdiff":
-			$order = create_images_parents($repo,$page,$lines,$_GET['h']);
+			$order = create_images_parents($repo,$page,$lines,$_GET['h'],$shortc);
 			break;
 		case "jump_to_tag":
 			if( isset($_POST['tag']) && $_POST['tag'] != "" ) $start = $_POST['tag'];
@@ -503,17 +515,26 @@ $extEnscript = array
 			else if( isset($_GET['tag']) && $_GET['tag'] != "" ) $start = $_GET['tag'];
 			else $start = "HEAD";
 			if( $start != "" ){
-				$order = create_images_starting($repo,$page,$lines,$start);
+				$order = create_images_starting($repo,$page,$lines,$start,$shortc);
 				break;
 			}
 		default:
-			$order = create_images($repo,$page,$lines);
+			$order = create_images($repo,$page,$lines,$shortc);
 			break;
 		}
 		$treeid = "";
 		if( isset($_GET['tr']) ) $treeid = $_GET['tr'];
 		//echo $treeid;
 		echo "<tr height=\"20\"><th>Date</th><th>Graph</th><th>Commiter</th><th>Summary</th><th>Actions</th></tr>\n";
+		echo "<tr><td></td><td>";
+		for ($i = 0; $i < count($shortc["top"]); $i++ ){
+			if( $shortc["top"][$i] != "." )
+				echo html_ahref( array( 'p'=>$_GET['p'], 'a'=>"jump_to_tag", 'tag'=>$shortc["top"][$i] ))
+					.html_ref( array('dl'=>"up"), "<img src=\"")."</a>";
+			else
+				echo html_ref( array('dl'=>"none"), "<img src=\"");
+		}
+		echo "</td><td></td><td></td><td></td></tr>\n";
         for ($i = 0; ($i < $lines) && ($order[$i]!= ""); $i++)  {
             $c = git_commit($repo, $order[$i]);
             $date = date("n/j/y G:i", (int)$c['date']);
@@ -551,6 +572,15 @@ $extEnscript = array
 			echo "</td><td>$diff | $tree | ".get_project_link($repo, "targz", $cid)." | ".get_project_link($repo, "zip", $cid)."</td></tr>\n"; 
             if( $_GET['a'] == "commitdiff" ) echo "<tr><td>-</td></tr>\n";
         }
+		echo "<tr><td></td><td>";
+		for ($i = 0; $i < count($shortc["bot"]); $i++ ){
+			if( $shortc["bot"][$i] != "." )
+				echo html_ahref( array( 'p'=>$_GET['p'], 'a'=>"jump_to_tag", 'tag'=>$shortc["bot"][$i] ))
+					.html_ref( array('dl'=>"down"), "<img src=\"")."</a>";
+			else
+				echo html_ref( array('dl'=>"none"), "<img src=\"");
+		}
+		echo "</td><td></td><td></td><td></td></tr>\n";
 		$n=0;
 		$maxr=git_number_of_commits($repo);
 		echo "</table><table>";
@@ -1170,6 +1200,10 @@ function git_parse($repo, $what ){
 				color: #CC6600;
 				background-color: #99FF99;
 			}
+
+			div.imgtable img{
+				border: 0px;
+			}
 			
 			
             tr:hover { background-color:#cdccc6; }
@@ -1320,16 +1354,18 @@ function create_cache_directory( $repo )
     create_directory( $dirname );
 }
 
-function analyze_hierarchy( &$vin, &$pin, &$commit, &$coord, &$parents, &$nr ){
+function analyze_hierarchy( &$vin, &$pin, &$commit, &$coord, &$parents, &$nr, &$childs ){
     // figure out the position of this node
     if( in_array($commit,$pin,true) ){
         $coord[$nr] = array_search( $commit,$pin,true ); // take reserved coordinate
         $pin[$coord[$nr]] = "."; // free the reserved coordinate
+		$childs[$coord[$nr]] = ".";
     }else{
         // this commit appears to be a head
         if( ! in_array( ".", $pin, true ) ){ // make empty coord plce
             $pin[] = ".";
     		$vin[] = ".";
+			$childs[] = ".";
         }
         $coord[$nr] = array_search( ".", $pin, true ); // take the first unused coordinate
         // do not allocate this place in array as this is already freed place
@@ -1337,8 +1373,19 @@ function analyze_hierarchy( &$vin, &$pin, &$commit, &$coord, &$parents, &$nr ){
     //reserve place for parents
     $pc=0;
     foreach( $parents as $p ){ 
-        if( in_array( $p, $pin, true ) ){ $pc++; continue; } // the parent alredy has place
-        if( $pc == 0 ){ $pin[$coord[$nr]] = $p; $pc++; continue; } // try to keep the head straigth
+        if( in_array( $p, $pin, true ) ){ 
+			// the parent alredy has place
+			$childs[array_search( $p, $pin, true )] = $commit; // register child
+			$pc++; 
+			continue; 
+		} 
+        if( $pc == 0 ){ 
+			// try to keep the head straigth
+			$pin[$coord[$nr]] = $p; 
+			$childs[$coord[$nr]] = $commit;
+			$pc++; 
+			continue; 
+		}
         if( in_array( ".", $pin, true ) ){ 
             // 1. find nearest free place in the left side
             $i = -1;
@@ -1347,9 +1394,11 @@ function analyze_hierarchy( &$vin, &$pin, &$commit, &$coord, &$parents, &$nr ){
             if( $i < 0 ) for( $i = $coord[$nr]; $pin[$i] != "."; $i++ );
             //$x = array_search( ".", $pin, true );
             $pin[$i] = $p;
+			$childs[$i] = $commit;
         }else{ // allcate new place into array
             $pin[] = $p;
     		$vin[] = ".";
+			$childs[] = $commit;
         }
     }
 	//reduce image width if possible
@@ -1357,14 +1406,16 @@ function analyze_hierarchy( &$vin, &$pin, &$commit, &$coord, &$parents, &$nr ){
 	{
 		$valpin = array_pop($pin);
 		$valvin = array_pop($vin);
+		$valchi = array_pop($childs);
 		if( $valpin == "." && $valvin == "." ) continue;
 		$pin[] = $valpin;
 		$vin[] = $valvin;
+		$childs[] = $valchi;
 		break;
 	}
 }
 
-function create_images_starting( $repo, &$retpage, $lines, $commit_name ){
+function create_images_starting( $repo, &$retpage, $lines, $commit_name, &$shortc ){
 
 	global $repo_directory, $cache_directory;
 	$dirname=$cache_directory.$repo;
@@ -1392,6 +1443,9 @@ function create_images_starting( $repo, &$retpage, $lines, $commit_name ){
     $top=0; // the topmost undrawn slice
     $todo=array( $commit );
     $todoc=1;
+	$shortc["top"] = array(); // shortcut commits on the top of the graph
+	$shortc["bot"] = array(); // shortcut commits on the bottom of the graph
+	$childs = array( "." ); // sliding place for shortc[top]
     do{
         unset($cmd);
         $cmd="GIT_DIR=".escapeshellarg($repo_directory.$repo)." git-rev-list --all --full-history --topo-order ";
@@ -1412,7 +1466,10 @@ function create_images_starting( $repo, &$retpage, $lines, $commit_name ){
         $parents=array();
         foreach( $out as $line )
         {
-            if( $page > $lines ) return $order; // break the image creation if more is not needed
+            if( $page >= $lines ){
+				$shortc["bot"] = $pin;
+				return $order; // break the image creation if more is not needed
+			}
             // taking the data descriptor
             unset($d);
         	$d = explode( " ", $line );
@@ -1430,10 +1487,13 @@ function create_images_starting( $repo, &$retpage, $lines, $commit_name ){
         		if( $page >=0 || $commit == $commit_start ){ 
 					$page++;
         		    $order[$page] = $commit; 
-					if( $page == 0 ) $retpage = $nr;
+					if( $page == 0 ){
+						$retpage = $nr;
+						$shortc["top"] = $childs;
+					}
         		}
                 $vin = $pin;
-        		analyze_hierarchy( $vin, $pin, $commit, $coord, $parents, $nr );
+        		analyze_hierarchy( $vin, $pin, $commit, $coord, $parents, $nr, $childs );
         		if( $page >= 0 )
     				draw_slice( $dirname, $commit, $coord[$nr], $nr, $parents, $pin, $vin );
     			merge_slice( $coord[$nr], $parents, $pin );
@@ -1458,7 +1518,7 @@ function create_images_starting( $repo, &$retpage, $lines, $commit_name ){
     return $order;
 }
 
-function create_images_parents( $repo, &$retpage, $lines, $commit ){
+function create_images_parents( $repo, &$retpage, $lines, $commit, &$shortc ){
 	global $repo_directory, $cache_directory;
 	$dirname=$cache_directory.$repo;
     create_cache_directory( $repo );
@@ -1475,6 +1535,10 @@ function create_images_parents( $repo, &$retpage, $lines, $commit ){
     $top=0; // the topmost undrawn slice
     $todo=array( $commit );
     $todoc=1;
+	// in this function we do not fill the arrays
+	$shortc["top"] = array(); // shortcut commits on the top of the graph
+	$shortc["bot"] = array(); // shortcut commits on the bottom of the graph
+	$childs = array( "." ); // sliding place fore shortc[top]
     do{
         unset($cmd);
         $cmd="GIT_DIR=".escapeshellarg($repo_directory.$repo)." git-rev-list --all --full-history --topo-order ";
@@ -1522,7 +1586,7 @@ function create_images_parents( $repo, &$retpage, $lines, $commit ){
         		    $todoc = $todoc + count( $parents );
         		}
                 $vin = $pin;
-        		analyze_hierarchy( $vin, $pin, $commit, $coord, $parents, $nr );
+        		analyze_hierarchy( $vin, $pin, $commit, $coord, $parents, $nr, $childs );
         		if( in_array($commit,$todo,true) )
     				draw_slice( $dirname, $commit, $coord[$nr], $nr, $parents, $pin, $vin );
     			merge_slice( $coord[$nr], $parents, $pin );
@@ -1547,7 +1611,7 @@ function create_images_parents( $repo, &$retpage, $lines, $commit ){
     return $order;
 }
 
-function create_images( $repo, $page, $lines ){
+function create_images( $repo, $page, $lines, &$shortc ){
 	global $repo_directory, $cache_directory;
 	$dirname=$cache_directory.$repo;
     create_cache_directory( $repo );
@@ -1561,6 +1625,9 @@ function create_images( $repo, $page, $lines ){
     $countf = 0; // the counter of unknown coordinates of floating section
     $nr=0; // counts rows
     $top=0; // the topmost undrawn slice
+	$shortc["top"] = array(); // shortcut commits on the top of the graph
+	$shortc["bot"] = array(); // shortcut commits on the bottom of the graph
+	$childs = array( "." ); // sliding place fore shortc[top]
     do{
         unset($cmd);
         $cmd="GIT_DIR=".escapeshellarg($repo_directory.$repo)." git-rev-list --all --full-history --topo-order ";
@@ -1581,7 +1648,11 @@ function create_images( $repo, $page, $lines ){
         $parents=array();
         foreach( $out as $line )
         {
-            if( $nr > $page + $lines ) return $order; // break the image creation if more is not needed
+            if( $nr >= $page + $lines )
+			{
+				$shortc["bot"] = $pin;
+				return $order; // break the image creation if more is not needed
+			}
             // taking the data descriptor
             unset($d);
         	$d = explode( " ", $line );
@@ -1596,10 +1667,16 @@ function create_images( $repo, $page, $lines ){
         		$parents=$d;
         		break;
         	case "endrecord":
-        		if($nr-$page >= 0) $order[$nr-$page] = $commit;
+        		if($nr-$page >= 0){
+					$order[$nr-$page] = $commit;
+					if( $nr == $page )
+						$shortc["top"] = $childs;
+				}
                 $vin = $pin;
-        		analyze_hierarchy( $vin, $pin, $commit, $coord, $parents, $nr );
-				draw_slice( $dirname, $commit, $coord[$nr], $nr, $parents, $pin, $vin );
+        		analyze_hierarchy( $vin, $pin, $commit, $coord, $parents, $nr, $childs );
+				if( $nr >= $page ){
+					draw_slice( $dirname, $commit, $coord[$nr], $nr, $parents, $pin, $vin );
+				}
     			merge_slice( $coord[$nr], $parents, $pin );
 				unset($vin);
         		//take next row
@@ -1756,6 +1833,48 @@ function draw_slice( $dirname, $commit, $x, $y, $parents, $pin, $vin )
     chmod( $filename, 0777 );
     //chgrp( $filename, intval(filegroup($repo_directory)) );
     //echo "$filename\n";
+}
+
+function draw_arrow( $type )
+{
+    $w = 7; $wo = 3;
+    $h = 10; $ho = 5;
+    $r = 2; $rj = 8;
+
+    $im = imagecreate( $w, $h );
+    $cbg = imagecolorallocate( $im, 255, 255, 255 );
+    $ctr = imagecolortransparent( $im, $cbg );
+    $cmg = imagecolorallocate( $im, 0, 0, 220 );
+    $cbl = imagecolorallocate( $im, 0, 0, 0 );
+    $crd = imagecolorallocate( $im, 180, 0, 0 );
+	$cgre= imagecolorallocate( $im, 0, 180, 0 );
+	
+	$cci = imagecolorallocate( $im, 150, 150, 150 );
+	$ctg = imagecolorallocate( $im, 255, 255, 0 );
+	$cbr = imagecolorallocate( $im, 255, 0, 0 );
+
+	$cline = $cbl;
+
+	if( $type == "none" ){
+		imageellipse( $im, $wo, $ho, $r, $r, $cci );		
+	    imagepng( $im );
+		die();
+	}
+	else if( $type == "up" ){
+		imageline( $im, 1, $ho, $wo, 1, $cline );		
+		imageline( $im, $wo, 1, $w-1, $ho, $cline );		
+	}
+	else if( $type == "down" ){
+		imageline( $im, 1, $ho, $wo, $h-2, $cline );		
+		imageline( $im, $wo, $h-2, $w-1, $ho, $cline );		
+	}
+	else{
+	    imagepng( $im );
+		die();
+	}
+	imageline( $im, $wo, 1, $wo, $h-2, $cline );
+    imagepng( $im );
+	die();
 }
 
 	// *****************************************************************************
