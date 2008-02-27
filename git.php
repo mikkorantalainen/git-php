@@ -1466,7 +1466,7 @@ function create_images_starting( $repo, &$retpage, $lines, $commit_name, &$short
         $parents=array();
         foreach( $out as $line )
         {
-            if( $page >= $lines ){
+            if( $page >= $lines -1 ){
 				$shortc["bot"] = $pin;
 				return $order; // break the image creation if more is not needed
 			}
@@ -1648,7 +1648,7 @@ function create_images( $repo, $page, $lines, &$shortc ){
         $parents=array();
         foreach( $out as $line )
         {
-            if( $nr >= $page + $lines )
+            if( $nr >= $page + $lines -1 )
 			{
 				$shortc["bot"] = $pin;
 				return $order; // break the image creation if more is not needed
