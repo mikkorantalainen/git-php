@@ -37,6 +37,7 @@
 	global $cache_name;
 	global $tags;
 	global $branches;
+	global $nr_of_shortlog_lines;
 	
 	global $keepurl; //the arguments that must be resent
 
@@ -132,7 +133,7 @@
 	$arrowdesc = array( 'none', 'up', 'down' );
 	$validargs = array_merge( $validargs, array( 
 		"targz", "zip", "plain", "dlfile", "rss2",
-		"commitdiff", "jump_to_tag", "GO", "HEAD",
+		"commitdiff", "jump_to_tag", "GO", "SET", "HEAD",
 		), $icondesc, $arrowdesc );
 
 	// now, all arguments must be in validargs
@@ -157,6 +158,17 @@
 	unset( $validargs );
 	// end of validity check
 
+	// modifying the number of shortlog lines
+	if( isset( $_POST['nr_of_shortlog_lines'] ) ) {
+		$nr_of_shortlog_lines = $_POST['nr_of_shortlog_lines'];
+		setcookie( 'nr_of_shortlog_lines', "$nr_of_shortlog_lines", time()+3600*24*360 );
+	} else if( isset($_COOKIE['nr_of_shortlog_lines'])) {
+		$nr_of_shortlog_lines = $_COOKIE['nr_of_shortlog_lines'];
+	} else {
+		$nr_of_shortlog_lines = 20;
+	}
+
+	if( $nr_of_shortlog_lines > 512 || $nr_of_shortlog_lines < 0 || !is_numeric($nr_of_shortlog_lines) ) $nr_of_shortlog_lines = 20;
 
 $extEnscript = array
 (
@@ -376,11 +388,12 @@ $extEnscript = array
 	// ******************************************************
 
     function html_summary($proj)    {
+		global $nr_of_shortlog_lines;
         $repo = get_repo_path($proj);
         html_summary_title($repo);
         html_desc($repo);
         if (!isset($_GET['t']) && !isset($_GET['b']))
-            html_shortlog($proj, 20);
+            html_shortlog($proj, $nr_of_shortlog_lines );
 		else
             html_shortlog($proj, 4);
     }
@@ -496,7 +509,7 @@ $extEnscript = array
     }
 
     function html_shortlog($repo, $lines)   {
-        global $cache_name,$branches,$tags;
+        global $cache_name,$branches,$tags,$nr_of_shortlog_lines;
         $page=0;
 		$shortc["top"] = array();
 		$shortc["bot"] = array();
@@ -604,7 +617,7 @@ $extEnscript = array
 }
 
 function html_summary_title($repo){
-	global $branches, $tags;
+	global $branches, $tags, $nr_of_shortlog_lines;
 	if( $_GET['a'] != "commitdiff" ){
 		echo html_ref( array( 'p'=>$_GET['p'], 'a'=>"jump_to_tag" ),"<form method=post action=\"");
 		echo "<div class=\"gittitle\">Summary :: ";
@@ -619,6 +632,7 @@ function html_summary_title($repo){
 			echo "<option value=\"".$br."\">".$br."</option>";
 		}
 		echo "</select> and press <input type=\"submit\" name=\"branch_or_tag\" value=\"GO\">";
+		echo " Lines to display <input type=\"text\" name=\"nr_of_shortlog_lines\" value=\"$nr_of_shortlog_lines\" size=\"3\"> <input type=\"submit\" name=\"branch_or_tag\" value=\"SET\"> \n";
 		echo "</div></form>";
 		return $rval;
 	} else {	
