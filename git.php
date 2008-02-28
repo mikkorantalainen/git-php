@@ -606,7 +606,7 @@ $extEnscript = array
 function html_summary_title($repo){
 	global $branches, $tags;
 	if( $_GET['a'] != "commitdiff" ){
-		echo "<form method=post action=\"".sanitized_url()."p={$_GET['p']}&a=jump_to_tag\">";
+		echo html_ref( array( 'p'=>$_GET['p'], 'a'=>"jump_to_tag" ),"<form method=post action=\"");
 		echo "<div class=\"gittitle\">Summary :: ";
 		echo "<select name=\"branch\">";
 		echo "<option selected value=\"\">select a branch</option>";
