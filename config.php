@@ -10,8 +10,11 @@
     /* Add the git logo in the footer */
     $git_logo = true;
 
-	/* Configure if the voting mechanism with SMS is active */
+	/* True if the voting mechanism with SMS is active */
 	$git_sms_active = true;
+
+	/* True if the bundle transfer is active */
+	$git_bundle_active = true;
 
     $title  = "git";
     $repo_index = "index.aux";
