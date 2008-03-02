@@ -583,7 +583,7 @@ $extEnscript = array
 				echo "<tags>".$symbolic."</tags> ";
 			echo $mess;
 			echo "</td><td>$diff | $tree | ".get_project_link($repo, "targz", $cid)." | ".get_project_link($repo, "zip", $cid)."</td></tr>\n"; 
-            if( $_GET['a'] == "commitdiff" ) echo "<tr><td>-</td></tr>\n";
+            if( $_GET['a'] == "commitdiff" ) echo "<tr class=\"inl\"><td>-</td></tr>\n";
         }
 		echo "<tr class=\"inl\" ><td></td><td>";
 		for ($i = 0; $i < count($shortc["bot"]); $i++ ){
@@ -1228,8 +1228,8 @@ function git_parse($repo, $what ){
 			div.imgtable .inl td{
 				height: auto;
 				vertical-align: middle;
-                font-size: 1px;
-				line-height: 1px;
+                font-size: 2px;
+				line-height: 3px;
 			}
 			
 			div.imgtable tr{
