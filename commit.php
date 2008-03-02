@@ -88,7 +88,7 @@ function send_the_main_page()
 	echo "To create a bundle, you can use the command similar to the following:<br>";
 	echo "<b>git bundle create mybundle.bdl master ^v1.0.0</b><br>";
 	echo "where v1.0.0 is the tag name that exists in yours and this version<br>";
-
+	html_spacer();
 	html_footer();
 	die();
 }
