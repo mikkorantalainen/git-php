@@ -187,8 +187,8 @@ function html_style()   {
         div.imgtable table{
             padding: 0px 0px 0px 7px;
             border-width: 0px;
-            line-height: 1px;
-            font-size: 9px;
+            font-size: 1px;
+			table-layout: auto;
         }
 		
 		div.imgtable tags{
@@ -203,9 +203,28 @@ function html_style()   {
 
 		div.imgtable img{
 			border: 0px;
+			display: block;
 		}
 		
+		div.imgtable .inl img{
+			border: 0px;
+			display: inline;
+		}
+
+		div.imgtable .inl td{
+			height: auto;
+			vertical-align: middle;
+            font-size: 2px;
+			line-height: 3px;
+		}
 		
+		div.imgtable tr{
+			height: auto;
+			vertical-align: middle;
+            font-size: 9px;
+			line-height: 15px;
+		}
+
         tr:hover { background-color:#cdccc6; }
 
         div.gitbrowse a.blob {
@@ -252,7 +271,6 @@ EOF;
     echo "</style>\n";
     }
 }
-
 	// *****************************************************************************
 	// Icons, hardcoded pictures ...
 	//

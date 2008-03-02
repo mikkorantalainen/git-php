@@ -379,8 +379,8 @@ $extEnscript = array
 		$treeid = "";
 		if( isset($_GET['tr']) ) $treeid = $_GET['tr'];
 		//echo $treeid;
-		echo "<tr height=\"20\"><th>Date</th><th>Graph</th><th>Commiter</th><th>Summary</th><th>Actions</th></tr>\n";
-		echo "<tr><td></td><td>";
+		echo "<tr><th>Date</th><th>Graph</th><th>Commiter</th><th>Summary</th><th>Actions</th></tr>\n";
+		echo "<tr class=\"inl\"><td></td><td>";
 		for ($i = 0; $i < count($shortc["top"]); $i++ ){
 			if( $shortc["top"][$i] != "." )
 				echo html_ahref( array( 'p'=>$_GET['p'], 'a'=>"jump_to_tag", 'tag'=>$shortc["top"][$i] ))
@@ -388,7 +388,7 @@ $extEnscript = array
 			else
 				echo html_ref( array('dl'=>"none"), "<img src=\"");
 		}
-		echo "</td><td></td><td></td><td></td></tr>\n";
+		echo "</td><td></td><td></td><td></td></tr></div>\n";
         for ($i = 0; ($i < $lines) && ($order[$i]!= ""); $i++)  {
             $c = git_commit($repo, $order[$i]);
             $date = date("n/j/y G:i", (int)$c['date']);
@@ -424,9 +424,9 @@ $extEnscript = array
 				echo "<tags>".$symbolic."</tags> ";
 			echo $mess;
 			echo "</td><td>$diff | $tree | ".get_project_link($repo, "targz", $cid)." | ".get_project_link($repo, "zip", $cid)."</td></tr>\n"; 
-            if( $_GET['a'] == "commitdiff" ) echo "<tr><td>-</td></tr>\n";
+            if( $_GET['a'] == "commitdiff" ) echo "<tr class=\"inl\"><td>-</td></tr>\n";
         }
-		echo "<tr><td></td><td>";
+		echo "<tr class=\"inl\" ><td></td><td>";
 		for ($i = 0; $i < count($shortc["bot"]); $i++ ){
 			if( $shortc["bot"][$i] != "." )
 				echo html_ahref( array( 'p'=>$_GET['p'], 'a'=>"jump_to_tag", 'tag'=>$shortc["bot"][$i] ))
@@ -913,7 +913,6 @@ function git_parse($repo, $what ){
 
         return $code;
     }
-
 	
 function git_number_of_commits( $repo )
 {
