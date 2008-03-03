@@ -183,6 +183,27 @@ function html_style()   {
         #gitbody td {
             padding: 0px 0px 0px 7px;
         }
+
+		div.optiontable table{
+            padding: 0px 7px 0px 7px;
+            border-width: 0px;
+            font-size: 12px;
+			table-layout: fixed;
+			line-height: 30px;
+			width: 100%;
+			position: center;
+			vertical-align: middle;
+		}
+
+		div.optiontable .descriptioncolumn td {
+			text-align: right;
+			text-decoration: underline;
+			display: inline;
+		}
+
+		div.optiontable #valuecolumn td {
+			text-align: left;
+		}
         
         div.imgtable table{
             padding: 0px 0px 0px 7px;
