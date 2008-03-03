@@ -189,20 +189,26 @@ function html_style()   {
             border-width: 0px;
             font-size: 12px;
 			table-layout: fixed;
-			line-height: 30px;
+			padding: 5px;
+			line-height: 36px;
+			cellpadding: 5px;
+			border-spacing: 0px;
 			width: 100%;
-			position: center;
 			vertical-align: middle;
 		}
-
-		div.optiontable .descriptioncolumn td {
-			text-align: right;
-			text-decoration: underline;
-			display: inline;
+		
+		div.optiontable tr:hover {
+		    border-width: 1px;
 		}
 
-		div.optiontable #valuecolumn td {
+		div.optiontable .descriptioncolumn {
+			text-align: right;
+			width: 30%;
+		}
+
+		div.optiontable .valuecolumn {
 			text-align: left;
+			width: 70%
 		}
         
         div.imgtable table{

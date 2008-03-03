@@ -79,7 +79,7 @@ function send_the_main_page()
 	echo html_ref( array( 'p'=>$_GET['p'], 'a'=>"jump_to_tag" ),"<form method=post action=\"");
 	echo "<div class=\"optiontable\">";
 	echo "<table><col class=\"descriptioncolumn\"/><col id=\"valuecolumn\"/>\n";
-	echo "<tr class=\"descriptioncolumn\"><td>Bundle file </td><td><input type=\"file\" name=\"bundle_file\" size=\"50\"></td>";
+	echo "<tr><td class=\"descriptioncolumn\">Bundle file </td><td><input type=\"file\" name=\"bundle_file\" size=\"40\"></td>";
 	echo "</table></div>\n";
 
 	echo "</form>\n";
