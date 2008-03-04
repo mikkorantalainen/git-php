@@ -47,16 +47,21 @@
 
 	if(!is_array($validargs))
 		$validargs = array();
-
+		
 	require_once( "config.php" );
 	require_once( "security.php" );
 	require_once( "html_helpers.php" );
+	require_once( "filestuff.php" );
+
+	if( !$git_commiting_active ) die();
 
 	security_load_repos();
 	security_test_repository_arg();
 	//security_load_names();
 
 	// some simple methods do not need checking
+	
+	clean_up_secrets();
 
     if (isset($_GET['dl']))
         if ( in_array( $_GET['dl'], $icondesc, true ) )
@@ -64,7 +69,13 @@
         else if ( in_array( $_GET['dl'], $flagdesc, true ) )
             write_img_png($_GET['dl']);
 		else if ( $_GET['dl'] =="human_check" )
-			draw_human_checker("123456789");
+			draw_human_checker(create_secret());
+
+    if (isset($_POST['action']))
+    if (check_secret($_POST['check']))
+    {
+        echo "Secret OK"; die();
+    }
 
 	send_the_main_page();
 	die();
@@ -73,9 +84,13 @@
 // the main page
 function send_the_main_page()
 {
+	if( !isset($_GET['p'] ) ) die();
+
 	html_header();
     html_style();
-	html_title("commit a bundle");
+    html_breadcrumbs();
+    html_spacer();
+	html_title("COMMIT A BUNDLE");
 	html_spacer();
 
 	echo html_ref( array( 'p'=>$_GET['p'], 'a'=>"jump_to_tag" ),"<form method=post action=\"");
@@ -84,7 +99,7 @@ function send_the_main_page()
 	echo "<tr><td class=\"descol\">Your name / alias e.t.c </td><td class=\"valcol\"><input type=\"text\" name=\"commiter name\" size=\"40\"></td></tr>\n";
 	echo "<tr><td class=\"descol\">Bundle file </td><td class=\"valcol\"><input type=\"file\" name=\"bundle_file\" size=\"40\"></td></tr>\n";
 	echo "<tr><td class=\"descol\">enter the value <img src=\"".sanitized_url()."dl=human_check\"/> here </td><td class=\"valcol\"><input type=\"text\" name=\"check\" size=\"40\"></td></tr>\n";
-	echo "<tr><td class=\"descol\">Submit </td><td class=\"valcol\"><input type=\"button\" name=\"action\"  value=\"commit\" size=\"10\"></td></tr>\n";
+	echo "<tr><td class=\"descol\">Submit </td><td class=\"valcol\"><input type=\"submit\" name=\"action\"  value=\"commit\" size=\"10\"></td></tr>\n";
 	echo "</table></div>\n";
 
 	echo "</form>\n";
@@ -92,9 +107,15 @@ function send_the_main_page()
 	html_spacer();
 	html_title("HELP");
 	html_spacer();
+	echo "<table><tr><td>";
 	echo "To create a bundle, you can use the command similar to the following:<br>";
 	echo "<b>git bundle create mybundle.bdl master ^v1.0.0</b><br>";
 	echo "where v1.0.0 is the tag name that exists in yours and this repository<br>";
+	echo "</td></tr></table>";
+	html_spacer();
+	html_title("BUNDLES IN QUEUE");
+	html_spacer();
+	echo "...";
 	html_spacer();
 	html_footer();
 	die();

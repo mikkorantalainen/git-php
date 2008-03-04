@@ -176,17 +176,32 @@ function get_repo_path($proj)   {
 	return "";
 }
 
+function create_random_message( $len )
+{
+    $mess= "";
+    for( $i=0; $i<$len; $i++ )
+    {
+        $num = rand(0,9);
+        $mess .= "$num";
+    }
+    return $mess;
+}
+
 function draw_human_checker( $amessage )
 {
-    $w = 100; $wo = 50;
-    $h = 30; $ho = 10;
-	$prob = 6;
+	$fh = imagefontheight(5);
+	$fw = imagefontwidth(5);
 
-	$fh = imagefontheight(1);
-	$fw = imagefontwidth(1);
+    if( !is_string( $amessage ) ) die();
+
+    $ml = strlen( $amessage );
+    $w = $ml * $fw +6;
+    $h = $fh+6;
+	$prob = 5;
+
 
     $im = imagecreate( $w, $h );
-    $cvar[0] = imagecolorallocate( $im, 255, 255, 255 );
+    $cvar[0] = imagecolorallocate($im, 255, 255, 255 );
 	$cvar[1] = imagecolorallocate($im, 200,   0,   0 );
 	$cvar[2] = imagecolorallocate($im,   0, 200,   0 );
 	$cvar[3] = imagecolorallocate($im,   0,   0, 200 );
@@ -198,27 +213,101 @@ function draw_human_checker( $amessage )
 	//echo "$fh,$fw";
 	//die();
 
-	imagefill( $im, 0, 0, $cvar[$col1] );
+    imagefill( $im, 0, 0, $cvar[$col1] );
 	
-	imagestring( $im, 5, ($h-$fh)/2, 5, $amessage, $cvar[$col2] );
-	//if( !imagestring( $im, 3, 0, 0, "Message", $cvar[$col2] ) ) { echo "false"; die(); }
+    for( $i=0; $i<$ml; $i++ )
+    {
+        $m = "$amessage[$i]";
+    	imagestring( $im, 5, $i*$fw+rand(0,4), rand(0,12)-3, $m, $cvar[$col2] );
+    }
 
-	for( $x=0; $x<$w; $x++ ){
-		for( $y=0; $y<$h; $y++ ){
-			if( rand(0,100) > $prob ) continue;
+    $n = $fw*$h*$prob / 100;
+    for( $i=3; $i<$w; $i+=$fw )
+    {
+        for( $j=0; $j<$n; $j++ )
+        {
+            $x = rand($i,$i+$fw);
+            $y = rand(0,$h-1);
 			$idx = imagecolorat( $im, $x, $y );
 			if( $idx == $col1 ){
 				imagesetpixel($im,$x,$y,$cvar[$col2]);
 			}
 			else{
 				imagesetpixel($im,$x,$y,$cvar[$col1]);
-			}
-		}
-	}
-
+			}            
+        }
+    }
     //imagepng( $im, "/home/peeter/public_html/test/proov.png" );
     imagepng( $im );
 	die();
+}
+
+function create_secrets_directory()
+{
+    global $repo_directory, $secret_name;
+    
+    $dname = $repo_directory.$secret_name;
+    if( !create_directory( $dname ) ) return false;
+    $file = fopen( $dname.".htaccess", "w" ); 
+    fwrite( $file, "Deny from all\n" );
+    fclose( $file );
+    $file = fopen( $dname."index.html", "w" );
+    fwrite( $file, "Access denied\n" );
+    fclose( $file );
+    return true;
+}
+
+function create_secret()
+{
+    global $repo_directory, $secret_name;
+    
+	$now = floor(time()/24/60/60); // number of days since 1970
+    $secret = "";
+
+    create_secrets_directory();
+    do{ $secret = create_random_message( 9 ); }while( file_exists($repo_directory.$secret_name.$secret) );
+    $file = fopen( $repo_directory.$secret_name.$secret, "w" );
+    fwrite( $file, "$now" );
+    fclose( $file );
+    return $secret;
+}
+
+function clean_up_secrets()
+{
+    global $repo_directory, $secret_name;
+	$now = floor(time()/24/60/60); // number of days since 1970
+	create_secrets_directory();
+    if ($handle = opendir($repo_directory.$secret_name)) 
+	{
+        while (false !== ($fname = readdir($handle))) 
+		{
+			$fullpath = $repo_directory.$secret_name.$fname;
+			//printf( "%s,%d\n", $file, is_dir($repo_directory . "/" . $file) );
+            if ( !is_file($fullpath) ) continue;
+            $file = fopen( $fullpath , "r" );
+            $fd = 0;
+            fscanf( $file, "%d", $fd );
+            fclose( $file );
+            if( abs( $fd - $now ) > 1 ) unlink( $fullpath );
+        }
+        closedir($handle);
+    } 
+}
+
+function check_secret( $fname )
+{
+    global $repo_directory, $secret_name;
+    
+    if( !is_numeric($fname) )
+    {
+        hacker_gaught( $fname );
+        die(); // dangerously wrong secret
+    }
+    
+    $fullpath = $repo_directory.$secret_name.$fname;
+    if( !file_exists($fullpath) ) return false; // wrong secret
+    unlink( $fullpath ); // clean up the obsolete secret
+    return true;
 }
 
 ?>

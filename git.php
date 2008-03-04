@@ -44,6 +44,8 @@
 	require_once( "config.php" );
 	require_once( "security.php" );
 	require_once( "html_helpers.php" );
+	require_once( "statis.php" );
+	require_once( "filestuff.php" );
 
 	$keepurl = array();
 	
@@ -824,26 +826,6 @@ function git_parse($repo, $what ){
         return $short;
     }
 
-    function html_breadcrumbs()  {
-        echo "<div class=\"githead\">\n";
-        $crumb = "<a href=\"".sanitized_url()."\">projects</a> / ";
-
-        if (isset($_GET['p']))
-            $crumb .= html_ahref( array( 'p'=>$_GET['p'], 'pg'=>"" ) ) . $_GET['p'] ."</a> / ";
-        
-        if (isset($_GET['b']))
-            $crumb .= "blob";
-
-        if (isset($_GET['t']))
-            $crumb .= "tree";
-
-        if ($_GET['a'] == 'commitdiff')
-            $crumb .= 'commitdiff';
-
-        echo $crumb;
-        echo "</div>\n";
-    }
-
     function zpr ($arr) {
         print "<pre>" .print_r($arr, true). "</pre>";
     }
@@ -925,84 +907,6 @@ function git_number_of_commits( $repo )
     $rrv= exec( $cmd, &$out );
 	return intval( $out[0] );
 }
-	
-	// *****************************************************************************
-	// statistics
-	//
-
-function stat_inc_count( $proj )
-{
-	$td = 0; $tt = 0;
-	stat_get_count( $proj, $td, $tt, true );
-}
-
-function stat_get_count( $proj, &$today, &$total, $inc=false )
-{
-	file_stat_get_count( $proj, $today, $total, $inc, 'counters' );
-}
-		
-	// *****************************************************************************
-	// filesystem functions
-	//
-	
-function create_directory( $fullpath )
-{
-	if( ($fullpath[0] != '/') && ($fullpath[1] == 0) ){
-		echo "Wrong path name $fullpath\n";
-		die();
-	}
-    if( ! is_dir($fullpath) ){
-        if( ! mkdir($fullpath) ){
-            echo "Error by making directory $fullpath\n";
-            die();
-        }
-    }
-    chmod( $fullpath, 0777 );	
-}
-
-function file_stat_get_count( $proj, &$today, &$total, $inc, $fbasename )
-{
-	global $cache_name;
-	$rtoday = 0;
-	$rtotal = 0;
-	$now = floor(time()/24/60/60); // number of days since 1970
-	$fname = dirname($proj)."/".$cache_name."/".$fbasename."-".basename($proj,".git");
-	$fd = 0;
-	
-	
-	//$fp1 = sem_get(fileinode($fname), 1);
-	//sem_acquire($fp1);
-	
-	if( file_exists( $fname ) )
-		$file = fopen( $fname, "r" ); // open or create the counter file
-	else
-		$file = FALSE;
-	if( $file != FALSE ){
-		fseek( $file, 0 ); // rewind the file to beginning
-		// read out the counter value
-		fscanf( $file, "%d %d %d", $fd, $rtoday, $rtotal );
-		if( $fd != $now ){
-			$rtoday = 0;
-			$fd = $now;
-		}
-		if( $inc ){
-			$rtoday++;
-			$rtotal++;
-		}
-		fclose( $file );
-	}
-	// uncomment the next lines to erase the counters
-	//$rtoday = 0;
-	//$rtotal = 0;	
-	$file = fopen( $fname, "w" ); // open or create the counter file	
-	// write the counter value
-	fseek( $file, 0 ); // rewind the file to beginning
-	fwrite( $file, "$fd $rtoday $rtotal\n" );
-	fclose( $file );
-	$today = $rtoday;
-	$total = $rtotal;	
-}
-
 	
 	// *****************************************************************************
 	// Graph tree drawing section
@@ -1538,15 +1442,5 @@ function draw_arrow( $type )
 	die();
 }
 
-	// *****************************************************************************
-	// SMS voting section
-	// http://fortumo.com/main/about_premium
-	//
-
-function get_votes( $proj, &$total )
-{
-	$td = 0;
-	file_stat_get_count( $proj, $td, $total, false, 'votes' );
-}
 
 ?>

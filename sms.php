@@ -43,6 +43,7 @@
 	require_once( "config.php" );
 	require_once( "security.php" );
 	require_once( "html_helpers.php" );
+	require_once( "statis.php" );
 
 	// end of server configuration
 	//-------------------------------------------------
@@ -94,78 +95,6 @@
 			return '<a href="sms.php?p='.$path.'&dl=htvote>';
     }
 
-	// *****************************************************************************
-	// filesystem functions
-	//
-	
-function create_directory( $fullpath )
-{
-	if( ($fullpath[0] != '/') && ($fullpath[1] == 0) ){
-		echo "Wrong path name $fullpath\n";
-		die();
-	}
-    if( ! is_dir($fullpath) ){
-        if( ! mkdir($fullpath) ){
-            echo "Error by making directory $fullpath\n";
-            die();
-        }
-    }
-    chmod( $fullpath, 0777 );	
-}
-
-function file_stat_get_count( $proj, &$today, &$total, $inc, $fbasename )
-{
-	global $cache_name;
-	$rtoday = 0;
-	$rtotal = 0;
-	$now = floor(time()/24/60/60); // number of days since 1970
-	$fname = dirname($proj)."/".$cache_name."/".$fbasename."-".basename($proj,".git");
-	$fd = 0;
-	
-	
-	//$fp1 = sem_get(fileinode($fname), 1);
-	//sem_acquire($fp1);
-	
-	if( file_exists( $fname ) )
-		$file = fopen( $fname, "r" ); // open or create the counter file
-	else
-		$file = FALSE;
-	if( $file != FALSE ){
-		fseek( $file, 0 ); // rewind the file to beginning
-		// read out the counter value
-		fscanf( $file, "%d %d %d", $fd, $rtoday, $rtotal );
-		if( $fd != $now ){
-			$rtoday = 0;
-			$fd = $now;
-		}
-		if( $inc ){
-			$rtoday++;
-			$rtotal++;
-		}
-		fclose( $file );
-	}
-	// uncomment the next lines to erase the counters
-	//$rtoday = 0;
-	//$rtotal = 0;	
-	$file = fopen( $fname, "w" ); // open or create the counter file	
-	// write the counter value
-	fseek( $file, 0 ); // rewind the file to beginning
-	fwrite( $file, "$fd $rtoday $rtotal\n" );
-	fclose( $file );
-	$today = $rtoday;
-	$total = $rtotal;	
-}
-
-	// *****************************************************************************
-	// SMS voting section
-	// http://fortumo.com/main/about_premium
-	//
-
-function get_votes( $proj, &$total )
-{
-	$td = 0;
-	file_stat_get_count( $proj, $td, $total, false, 'votes' );
-}
 
 function vote_a_project()
 {

@@ -91,6 +91,25 @@ function html_header()  {
     
 }
 
+function html_breadcrumbs()  {
+    echo "<div class=\"githead\">\n";
+    $crumb = "<a href=\"".sanitized_url()."\">projects</a> / ";
+
+    if (isset($_GET['p']))
+        $crumb .= html_ahref( array( 'p'=>$_GET['p'], 'pg'=>"" ) ) . $_GET['p'] ."</a> / ";
+    
+    if (isset($_GET['b']))
+        $crumb .= "blob";
+
+    if (isset($_GET['t']))
+        $crumb .= "tree";
+
+    if ($_GET['a'] == 'commitdiff')
+        $crumb .= 'commitdiff';
+
+    echo $crumb;
+    echo "</div>\n";
+}
 
 function html_footer()  {
     global $git_embed;

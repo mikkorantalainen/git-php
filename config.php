@@ -15,11 +15,15 @@
 
 	/* True if the bundle transfer is active */
 	$git_bundle_active = true;
+	
+	/* True if committing is active */
+	$git_commiting_active = true;
 
     $title  = "git";
     $repo_index = "index.aux";
     $repo_directory = "/home/peeter/public_html/git/";
     $cache_name=".cache/";
+    $secret_name=".secrets/";
     $cache_directory = $repo_directory.$cache_name;
     $http_method_prefix = "http://people.proekspert.ee/peeter/git/";
     $communication_link = "http://people.proekspert.ee/peeter/blog";
