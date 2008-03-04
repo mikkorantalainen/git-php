@@ -63,6 +63,8 @@
             write_img_png($_GET['dl']);
         else if ( in_array( $_GET['dl'], $flagdesc, true ) )
             write_img_png($_GET['dl']);
+		else if ( $_GET['dl'] =="human_check" )
+			draw_human_checker("123456789");
 
 	send_the_main_page();
 	die();
@@ -78,8 +80,11 @@ function send_the_main_page()
 
 	echo html_ref( array( 'p'=>$_GET['p'], 'a'=>"jump_to_tag" ),"<form method=post action=\"");
 	echo "<div class=\"optiontable\">";
-	echo "<table><col class=\"descriptioncolumn\"/><col id=\"valuecolumn\"/>\n";
-	echo "<tr><td class=\"descriptioncolumn\">Bundle file </td><td><input type=\"file\" name=\"bundle_file\" size=\"40\"></td>";
+	echo "<table>\n";
+	echo "<tr><td class=\"descol\">Your name / alias e.t.c </td><td class=\"valcol\"><input type=\"text\" name=\"commiter name\" size=\"40\"></td></tr>\n";
+	echo "<tr><td class=\"descol\">Bundle file </td><td class=\"valcol\"><input type=\"file\" name=\"bundle_file\" size=\"40\"></td></tr>\n";
+	echo "<tr><td class=\"descol\">enter the value <img src=\"".sanitized_url()."dl=human_check\"/> here </td><td class=\"valcol\"><input type=\"text\" name=\"check\" size=\"40\"></td></tr>\n";
+	echo "<tr><td class=\"descol\">Submit </td><td class=\"valcol\"><input type=\"button\" name=\"action\"  value=\"commit\" size=\"10\"></td></tr>\n";
 	echo "</table></div>\n";
 
 	echo "</form>\n";
@@ -89,7 +94,7 @@ function send_the_main_page()
 	html_spacer();
 	echo "To create a bundle, you can use the command similar to the following:<br>";
 	echo "<b>git bundle create mybundle.bdl master ^v1.0.0</b><br>";
-	echo "where v1.0.0 is the tag name that exists in yours and this version<br>";
+	echo "where v1.0.0 is the tag name that exists in yours and this repository<br>";
 	html_spacer();
 	html_footer();
 	die();

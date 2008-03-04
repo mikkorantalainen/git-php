@@ -201,14 +201,18 @@ function html_style()   {
 		    border-width: 1px;
 		}
 
-		div.optiontable .descriptioncolumn {
+		div.optiontable .descol {
 			text-align: right;
 			width: 30%;
 		}
 
-		div.optiontable .valuecolumn {
+		div.optiontable .valcol {
 			text-align: left;
 			width: 70%
+		}
+
+		div.optiontable img {
+			vertical-align: middle;
 		}
         
         div.imgtable table{

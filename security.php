@@ -176,4 +176,49 @@ function get_repo_path($proj)   {
 	return "";
 }
 
+function draw_human_checker( $amessage )
+{
+    $w = 100; $wo = 50;
+    $h = 30; $ho = 10;
+	$prob = 6;
+
+	$fh = imagefontheight(1);
+	$fw = imagefontwidth(1);
+
+    $im = imagecreate( $w, $h );
+    $cvar[0] = imagecolorallocate( $im, 255, 255, 255 );
+	$cvar[1] = imagecolorallocate($im, 200,   0,   0 );
+	$cvar[2] = imagecolorallocate($im,   0, 200,   0 );
+	$cvar[3] = imagecolorallocate($im,   0,   0, 200 );
+	$cvar[4] = imagecolorallocate($im,   0,   0,   0 );
+
+	$col1 = rand(0,4);
+	do{ $col2 = rand(0,4); } while( $col1 == $col2 );
+
+	//echo "$fh,$fw";
+	//die();
+
+	imagefill( $im, 0, 0, $cvar[$col1] );
+	
+	imagestring( $im, 5, ($h-$fh)/2, 5, $amessage, $cvar[$col2] );
+	//if( !imagestring( $im, 3, 0, 0, "Message", $cvar[$col2] ) ) { echo "false"; die(); }
+
+	for( $x=0; $x<$w; $x++ ){
+		for( $y=0; $y<$h; $y++ ){
+			if( rand(0,100) > $prob ) continue;
+			$idx = imagecolorat( $im, $x, $y );
+			if( $idx == $col1 ){
+				imagesetpixel($im,$x,$y,$cvar[$col2]);
+			}
+			else{
+				imagesetpixel($im,$x,$y,$cvar[$col1]);
+			}
+		}
+	}
+
+    //imagepng( $im, "/home/peeter/public_html/test/proov.png" );
+    imagepng( $im );
+	die();
+}
+
 ?>
