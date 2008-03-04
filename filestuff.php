@@ -27,7 +27,6 @@
 
 function create_directory( $fullpath )
 {
-    $retval = false;
 	if( ($fullpath[0] != '/') && ($fullpath[1] == 0) ){
 		echo "Wrong path name $fullpath\n";
 		die();
@@ -37,10 +36,10 @@ function create_directory( $fullpath )
             echo "Error by making directory $fullpath\n";
             die();
         }
-        $retval = true;
+        chmod( $fullpath, 0777 );
+        return true;
     }
-    chmod( $fullpath, 0777 );
-    return $retval;	
+    return false;	
 }
 
 ?>

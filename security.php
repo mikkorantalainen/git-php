@@ -247,7 +247,7 @@ function create_secrets_directory()
     global $repo_directory, $secret_name;
     
     $dname = $repo_directory.$secret_name;
-    if( !create_directory( $dname ) ) return false;
+    if( create_directory( $dname ) == false ) return false;
     $file = fopen( $dname.".htaccess", "w" ); 
     fwrite( $file, "Deny from all\n" );
     fclose( $file );
@@ -281,6 +281,7 @@ function clean_up_secrets()
 	{
         while (false !== ($fname = readdir($handle))) 
 		{
+		    if( !is_numeric($fname) ) continue;
 			$fullpath = $repo_directory.$secret_name.$fname;
 			//printf( "%s,%d\n", $file, is_dir($repo_directory . "/" . $file) );
             if ( !is_file($fullpath) ) continue;
