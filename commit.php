@@ -74,12 +74,13 @@
     if (isset($_POST['action']))
     if (check_secret($_POST['check']))
     {
-        echo "Secret OK"; 
+        echo "Secret OK\n"; 
+		save_bundle();
 		die();
     }
 	else
 	{
-		echo "Secret not OK";
+		echo "Secret not OK\n";
 		die();
 	}
 
@@ -93,7 +94,7 @@ function send_the_submit_form()
 	html_title("COMMIT A BUNDLE");
 	html_spacer();
 
-	echo html_ref( array( 'p'=>$_GET['p'], 'a'=>"jump_to_tag" ),"<form method=post action=\"");
+	echo html_ref( array( 'p'=>$_GET['p'], 'a'=>"jump_to_tag" ),"<form method=post enctype=\"multipart/form-data\" action=\"");
 	echo "<div class=\"optiontable\">";
 	echo "<table>\n";
 	echo "<tr><td class=\"descol\">Your name / alias e.t.c </td><td class=\"valcol\"><input type=\"text\" name=\"commiter name\" size=\"40\"></td></tr>\n";
@@ -121,10 +122,19 @@ function send_the_help_section_of_submit()
 
 function send_the_bundles_in_queue()
 {
+    global $repo_directory, $bundle_name;
 	html_spacer();
 	html_title("BUNDLES IN QUEUE");
 	html_spacer();
-	echo "...";
+	$bundles = load_bundles_in_directory();
+	echo "<table><th>Nr</nr><th>Commiter</th><th>Bundle file</th>\n";
+	$nr = 0;
+	foreach( $bundles as $bdl )
+	{
+		$nr++;
+		echo "<tr><td>$nr</td><td>".$bdl['name']."</td><td><a href=\"".$bundle_name.$bdl['bdl']."\">".$bdl['bdl']."</a></td></tr>\n";
+	}
+	echo "</table>";
 }
 
 // the main page
@@ -140,6 +150,54 @@ function send_the_main_page()
 	html_spacer();
 	html_footer();
 	die();
+}
+
+// **************************
+
+function create_bundles_directory()
+{
+    global $repo_directory, $bundle_name;
+    $dname = $repo_directory.$bundle_name;
+    return create_directory( $dname ) ;
+}
+
+function load_bundles_in_directory()
+{
+    global $repo_directory, $bundle_name;
+	$bundles = array();
+    $dname = $repo_directory.$bundle_name;
+	create_bundles_directory();
+    if ($handle = opendir($dname)) 
+	{
+        while (false !== ($fname = readdir($handle))) 
+		{
+		    if( !is_numeric($fname) ) continue;
+			$fullpath = $dname.$fname;
+            if ( !is_file($fullpath) ) continue;
+			if ( !is_file($fullpath.".txt") ) continue; // the description file must exist too
+			$record['bdl'] = $fname;
+			$file = fopen( $fullpath.".txt", "r" );
+			$record['name'] = fgets( $file );
+			fclose( $file );
+			$bundles[] = $record;
+        }
+        closedir($handle);
+    } 
+	return $bundles;
+}
+
+function save_bundle()
+{
+    global $repo_directory, $bundle_name;
+	$dname = $repo_directory.$bundle_name;
+	if( $_FILES['bundle_file']['error'] != UPLOAD_ERR_OK ) return;
+	$fname = "";
+	do{ $fname = create_random_message( 9 ); } while( is_file( $dname.$fname ) );
+	$fullpath = $dname.$fname;
+	if( false == move_uploaded_file( $_FILES['bundle_file']['tmp_name'], $fullpath ) ) return;
+	$file = fopen( $fullpath.".txt", "w" );
+	fwrite( $file, $_POST['commiter_name'], 40 );
+	fclose( $file );
 }
 
 ?>

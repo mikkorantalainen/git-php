@@ -24,6 +24,7 @@
     $repo_directory = "/home/peeter/public_html/git/";
     $cache_name=".cache/";
     $secret_name=".secrets/";
+	$bundle_name=".bundles/";
     $cache_directory = $repo_directory.$cache_name;
     $http_method_prefix = "http://people.proekspert.ee/peeter/git/";
     $communication_link = "http://people.proekspert.ee/peeter/blog";
