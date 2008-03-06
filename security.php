@@ -261,7 +261,7 @@ function create_secret()
 {
     global $repo_directory, $secret_name;
     
-	$now = floor(time()/24/60/60); // number of days since 1970
+	$now = floor(time()/60/60); // number of hours since 1970
     $secret = "";
 
     create_secrets_directory();

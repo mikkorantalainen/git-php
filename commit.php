@@ -74,11 +74,13 @@
     if (isset($_POST['action']))
     if (check_secret($_POST['check']))
     {
-        echo "Secret OK"; die();
+        echo "Secret OK"; 
+		die();
     }
 	else
 	{
-		echo "Secret not OK": die();
+		echo "Secret not OK";
+		die();
 	}
 
 	send_the_main_page();
