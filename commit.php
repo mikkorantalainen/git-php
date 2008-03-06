@@ -76,19 +76,17 @@
     {
         echo "Secret OK"; die();
     }
+	else
+	{
+		echo "Secret not OK": die();
+	}
 
 	send_the_main_page();
 	die();
 
 
-// the main page
-function send_the_main_page()
+function send_the_submit_form()
 {
-	if( !isset($_GET['p'] ) ) die();
-
-	html_header();
-    html_style();
-    html_breadcrumbs();
     html_spacer();
 	html_title("COMMIT A BUNDLE");
 	html_spacer();
@@ -104,6 +102,11 @@ function send_the_main_page()
 
 	echo "</form>\n";
 
+	send_the_help_section_of_submit();
+}
+
+function send_the_help_section_of_submit()
+{
 	html_spacer();
 	html_title("HELP");
 	html_spacer();
@@ -112,10 +115,26 @@ function send_the_main_page()
 	echo "<b>git bundle create mybundle.bdl master ^v1.0.0</b><br>";
 	echo "where v1.0.0 is the tag name that exists in yours and this repository<br>";
 	echo "</td></tr></table>";
+}
+
+function send_the_bundles_in_queue()
+{
 	html_spacer();
 	html_title("BUNDLES IN QUEUE");
 	html_spacer();
 	echo "...";
+}
+
+// the main page
+function send_the_main_page()
+{
+	if( !isset($_GET['p'] ) ) die();
+
+	html_header();
+    html_style();
+    html_breadcrumbs();
+	send_the_submit_form();
+	send_the_bundles_in_queue();
 	html_spacer();
 	html_footer();
 	die();
