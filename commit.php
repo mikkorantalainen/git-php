@@ -211,9 +211,11 @@ function save_bundle()
 	do{ $fname = create_random_message( 9 ); } while( is_file( $dname.$fname ) );
 	$fullpath = $dname.$fname;
 	if( false == move_uploaded_file( $_FILES['bundle_file']['tmp_name'], $fullpath ) ) return false;
+	chmod( $fullpath, 0666 );
 	$file = fopen( $fullpath.".txt", "w" );
 	fwrite( $file, $_POST['commiter_name'], 40 );
 	fclose( $file );
+	chmod( $fullpath.".txt", 0666 );
 	return true;
 }
 
