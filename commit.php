@@ -96,7 +96,7 @@ function send_the_submit_form()
 	echo html_ref( array( 'p'=>$_GET['p'], 'a'=>"jump_to_tag" ),"<form method=post enctype=\"multipart/form-data\" action=\"");
 	echo "<div class=\"optiontable\">";
 	echo "<table>\n";
-	echo "<tr><td class=\"descol\">Your name / alias e.t.c </td><td class=\"valcol\"><input type=\"text\" name=\"commiter name\" size=\"40\"></td></tr>\n";
+	echo "<tr><td class=\"descol\">Short MEANINGFUL description </td><td class=\"valcol\"><input type=\"text\" name=\"commiter name\" size=\"40\"></td></tr>\n";
 	echo "<tr><td class=\"descol\">Bundle file </td><td class=\"valcol\"><input type=\"file\" name=\"bundle_file\" size=\"40\"></td></tr>\n";
 	echo "<tr><td class=\"descol\">enter the value <img src=\"".sanitized_url()."dl=human_check\"/> here </td><td class=\"valcol\"><input type=\"text\" name=\"check\" size=\"40\"></td></tr>\n";
 	echo "<tr><td class=\"descol\">Submit </td><td class=\"valcol\"><input type=\"submit\" name=\"action\"  value=\"commit\" size=\"10\"></td></tr>\n";
@@ -126,12 +126,12 @@ function send_the_bundles_in_queue()
 	html_title("BUNDLES IN QUEUE");
 	html_spacer();
 	$bundles = load_bundles_in_directory();
-	echo "<table><th>Nr</nr><th>Commiter</th><th>Bundle file</th>\n";
+	echo "<table><th>Nr</nr><th>Bundle file</th><th>Description</th>\n";
 	$nr = 0;
 	foreach( $bundles as $bdl )
 	{
 		$nr++;
-		echo "<tr><td>$nr</td><td>".$bdl['name']."</td><td><a href=\"".$bundle_name.$bdl['bdl']."\">".$bdl['bdl']."</a></td></tr>\n";
+		echo "<tr><td>$nr</td><td><a href=\"".$bundle_name.$bdl['bdl']."\">".$bdl['bdl']."</a></td><td>".$bdl['name']."</td></tr>\n";
 	}
 	echo "</table>";
 }
