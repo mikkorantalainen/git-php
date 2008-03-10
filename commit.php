@@ -74,13 +74,12 @@
     if (isset($_POST['action']))
     if (check_secret($_POST['check']))
     {
-        echo "Secret OK\n"; 
-		save_bundle();
+		send_the_main_page('verify');
 		die();
     }
 	else
 	{
-		echo "Secret not OK\n";
+		send_the_main_page('badsecret');
 		die();
 	}
 
@@ -138,14 +137,26 @@ function send_the_bundles_in_queue()
 }
 
 // the main page
-function send_the_main_page()
+function send_the_main_page( $subpage = 'submit' )
 {
 	if( !isset($_GET['p'] ) ) die();
 
 	html_header();
     html_style();
     html_breadcrumbs();
-	send_the_submit_form();
+	switch( $subpage ){
+	case 'submit':
+		send_the_submit_form();
+		break;
+	case 'verify':
+		check_verify_bundle();
+		break;
+	case 'badsecret':
+		html_spacer();
+		html_title( "!!! Wrong secret !!!" );
+		html_spacer();
+		break;
+	}
 	send_the_bundles_in_queue();
 	html_spacer();
 	html_footer();
@@ -157,15 +168,18 @@ function send_the_main_page()
 function create_bundles_directory()
 {
     global $repo_directory, $bundle_name;
-    $dname = $repo_directory.$bundle_name;
-    return create_directory( $dname ) ;
+	$repo=$_GET['p'];
+    $dname = $repo_directory.$bundle_name."/";
+    create_directory( $dname );
+	return create_directory( $dname.$repo ) ;
 }
 
 function load_bundles_in_directory()
 {
     global $repo_directory, $bundle_name;
+	$repo=$_GET['p'];
 	$bundles = array();
-    $dname = $repo_directory.$bundle_name;
+    $dname = $repo_directory.$bundle_name.$repo."/";
 	create_bundles_directory();
     if ($handle = opendir($dname)) 
 	{
@@ -189,15 +203,45 @@ function load_bundles_in_directory()
 function save_bundle()
 {
     global $repo_directory, $bundle_name;
-	$dname = $repo_directory.$bundle_name;
-	if( $_FILES['bundle_file']['error'] != UPLOAD_ERR_OK ) return;
+	$repo=$_GET['p'];
+	$dname = $repo_directory.$bundle_name.$repo."/";
+	create_bundles_directory();
+	if( $_FILES['bundle_file']['error'] != UPLOAD_ERR_OK ) return false;
 	$fname = "";
 	do{ $fname = create_random_message( 9 ); } while( is_file( $dname.$fname ) );
 	$fullpath = $dname.$fname;
-	if( false == move_uploaded_file( $_FILES['bundle_file']['tmp_name'], $fullpath ) ) return;
+	if( false == move_uploaded_file( $_FILES['bundle_file']['tmp_name'], $fullpath ) ) return false;
 	$file = fopen( $fullpath.".txt", "w" );
 	fwrite( $file, $_POST['commiter_name'], 40 );
 	fclose( $file );
+	return true;
+}
+
+// returns true if bundle does apply to the database
+// returns false if the bunlde does not apply to the database
+function check_verify_bundle()
+{
+	$repo=$_GET['p'];
+	$what=$_FILES['bundle_file']['tmp_name'];
+	$cmd1="GIT_DIR=".get_repo_path(basename($repo))." git-bundle verify ".escapeshellarg($what)." 2>&1 ";
+	//echo $cmd1;
+	$out1 = array();
+	$status = 1;
+	exec( $cmd1, &$out1, &$status );
+	html_spacer();
+	if( ($status == 0) && save_bundle() ){
+		html_title("REGISTERED");
+	}
+	else{
+		html_title("!!! ERROR !!!");
+	}
+	html_spacer();
+	echo "<table>\n";
+	foreach( $out1 as $out ){
+		echo "<tr><td>".$out."</td></tr>\n";
+	}
+	echo "</table>\n";
+	return $status;
 }
 
 ?>
