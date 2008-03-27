@@ -144,7 +144,13 @@ function how_to_vote_this_project()
 	if( isset($_GET['p']) ) $nr = array_search(get_repo_path($_GET['p']),$repos);
 
     html_header();
-	if( isset($_GET['p']) )
+    html_style();
+    html_title( "VOTING FOR ".$_GET['p'] );
+    if( isset($_GET['p']) ){ html_pages(); }
+	html_spacer();
+    html_title( "AGREEMENT" );
+	html_spacer();
+    if( isset($_GET['p']) )
 	{
 		echo "<center><H1> Voting for <u>".$_GET['p']."</u></H1>";
 	}
@@ -171,7 +177,9 @@ function how_to_vote_this_project()
 	echo "Support: Peeter (dot) Vois (at) mail (dot) ee<p>\n";
 	echo "Powered by <a href=\"http://fortumo.com/\">fortumo.com</a><p>\n";
 
-	echo "</center></body></html>";
+	echo "</center>";
+	html_spacer();
+	html_footer();	
 	die();
 }
 

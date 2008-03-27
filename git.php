@@ -198,6 +198,8 @@ $extEnscript = array
     html_style();
 
     html_breadcrumbs();
+    
+    html_pages();
 
     if (isset($_GET['p']))  { 
         html_spacer();

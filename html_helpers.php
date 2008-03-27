@@ -111,6 +111,19 @@ function html_breadcrumbs()  {
     echo "</div>\n";
 }
 
+function html_pages() {
+    global $git_sms_active, $git_bundle_active;
+    if( isset($_GET['p']) ){
+        html_spacer();
+    	$now = floor(time()/15/60); // one hour
+    	echo "<center>";
+	    echo "<a href=\"git.php?p=".$_GET['p']."&tm=$now\">browse</a>";
+    	if( $git_sms_active ){ echo " | <a href=\"sms.php?p=".$_GET['p']."&dl=htvote\">vote</a>"; }
+	    if( $git_bundle_active ){ echo " | <a href=\"commit.php?p=".$_GET['p']."\">commit</a>"; }
+	    echo "</center>";
+	}
+}
+
 function html_footer()  {
     global $git_embed;
     global $git_logo;
@@ -321,12 +334,13 @@ EOF;
     echo "</style>\n";
     }
 }
-	// *****************************************************************************
-	// Icons, hardcoded pictures ...
-	//
 
-	$icondesc = array( 'git_logo', 'icon_folder', 'icon_plain', 'icon_color' );
-	$flagdesc = array( 'estonia.png', 'finland.png', 'sweden.png', 'norway.png', 'denmark.png', 'latvia.png', 'lithuania.png' );
+// *****************************************************************************
+// Icons, hardcoded pictures ...
+//
+
+$icondesc = array( 'git_logo', 'icon_folder', 'icon_plain', 'icon_color' );
+$flagdesc = array( 'estonia.png', 'finland.png', 'sweden.png', 'norway.png', 'denmark.png', 'latvia.png', 'lithuania.png' );
 
 function write_img_png($imgptr)
 {

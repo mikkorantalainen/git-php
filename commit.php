@@ -90,7 +90,7 @@
 function send_the_submit_form()
 {
     html_spacer();
-	html_title("COMMIT A BUNDLE");
+	html_title("BUNDLE INFORMATION");
 	html_spacer();
 
 	echo html_ref( array( 'p'=>$_GET['p'], 'a'=>"jump_to_tag" ),"<form method=post enctype=\"multipart/form-data\" action=\"");
@@ -143,7 +143,8 @@ function send_the_main_page( $subpage = 'submit' )
 
 	html_header();
     html_style();
-    html_breadcrumbs();
+    html_Title("COMMITING TO ".$_GET['p']);
+    html_pages();
 	switch( $subpage ){
 	case 'submit':
 		send_the_submit_form();
