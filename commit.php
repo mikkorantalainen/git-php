@@ -122,6 +122,7 @@ function send_the_help_section_of_submit()
 function send_the_bundles_in_queue()
 {
     global $repo_directory, $bundle_name;
+	$repo=$_GET['p'];	
 	html_spacer();
 	html_title("BUNDLES IN QUEUE");
 	html_spacer();
@@ -131,7 +132,7 @@ function send_the_bundles_in_queue()
 	foreach( $bundles as $bdl )
 	{
 		$nr++;
-		echo "<tr><td>$nr</td><td><a href=\"".$bundle_name.$bdl['bdl']."\">".$bdl['bdl']."</a></td><td>".$bdl['name']."</td></tr>\n";
+		echo "<tr><td>$nr</td><td><a href=\"".$bundle_name.$repo."/".$bdl['bdl']."\">".$bdl['bdl']."</a></td><td>".$bdl['name']."</td></tr>\n";
 	}
 	echo "</table>";
 }
@@ -192,7 +193,10 @@ function load_bundles_in_directory()
 			if ( !is_file($fullpath.".txt") ) continue; // the description file must exist too
 			$record['bdl'] = $fname;
 			$file = fopen( $fullpath.".txt", "r" );
-			$record['name'] = fgets( $file );
+			if( check_new_head_in_bundle( $fullpath, $out ) )
+				$record['name'] = fgets( $file );
+			else
+				$record['name'] = "*** applied *** ".fgets( $file );
 			fclose( $file );
 			$bundles[] = $record;
         }
@@ -220,19 +224,70 @@ function save_bundle()
 	return true;
 }
 
-// returns true if bundle does apply to the database
-// returns false if the bunlde does not apply to the database
-function check_verify_bundle()
+// check if a tag is in repository
+function check_tag_in_repo( $the_tag )
+{
+	global $repo_directory;
+	$repo=$_GET['p'];
+	$out = array();
+	$nr=0;
+	do{
+        $cmd="GIT_DIR=".escapeshellarg($repo_directory.$repo)." git-rev-list --all --full-history --topo-order ";
+        $cmd .= "--max-count=1000 --skip=" .escapeshellarg($nr) ." ";
+        $cmd .= "--pretty=format:\"";
+        $cmd .= "parents %P%n";
+        $cmd .= "endrecord%n\"";
+   		unset($out);
+        $out = array();
+        $rrv= exec( $cmd, &$out );
+        foreach( $out as $line )
+        {
+       		$nr = $nr +1;
+            unset($d);
+        	$d = explode( " ", $line );
+			if( ($d[0] == "commit") && ($d[1]==$the_tag) )
+				return true; // tag was found in repo
+		}
+	}while( count($out) > 0 );
+	return false; // tag was not in repo
+}
+
+
+// check if the bundle does include new stuff
+function check_new_head_in_bundle( $what, &$out1 )
 {
 	$repo=$_GET['p'];
-	$what=$_FILES['bundle_file']['tmp_name'];
 	$cmd1="GIT_DIR=".get_repo_path(basename($repo))." git-bundle verify ".escapeshellarg($what)." 2>&1 ";
 	//echo $cmd1;
 	$out1 = array();
 	$status = 1;
 	exec( $cmd1, &$out1, &$status );
+	if( $status == 0 )
+	foreach ( $out1 as $line )
+	{
+		unset($d);
+		$d = explode( " ", $line );
+		if( is_sha1( $d[0] ) )
+			if( !check_tag_in_repo( $d[0] ) )
+				return true;
+	}
+	$out1[] = "*** Error *** No new tag found in bundle!";
+	return false;
+}
+
+
+// returns true if bundle does apply to the database
+// returns false if the bunlde does not apply to the database
+function check_verify_bundle()
+{
+	$success=true;
+	$repo=$_GET['p'];
+	$what=$_FILES['bundle_file']['tmp_name'];
+	$out1 = array();
+	if( $success ) $success = $success && check_new_head_in_bundle( $what, $out1 );
+	if( $success ) $success = $success && save_bundle();
 	html_spacer();
-	if( ($status == 0) && save_bundle() ){
+	if( $success ){
 		html_title("REGISTERED");
 	}
 	else{
