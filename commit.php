@@ -207,7 +207,7 @@ function load_bundles_in_directory()
 
 function save_bundle()
 {
-    global $repo_directory, $bundle_name;
+    global $repo_directory, $bundle_name, $emailaddress;
 	$repo=$_GET['p'];
 	$dname = $repo_directory.$bundle_name.$repo."/";
 	create_bundles_directory();
@@ -221,6 +221,15 @@ function save_bundle()
 	fwrite( $file, $_POST['commiter_name'], 40 );
 	fclose( $file );
 	chmod( $fullpath.".txt", 0666 );
+	// send e-mail message about the commitment
+	$message = $_POST['commiter_name']."\n ".$fullpath."\n";
+	$headers = 'From: '. $emailaddress . "\r\n" .
+        'Reply-To: ' . $emailaddress . "\r\n" .
+        'X-Mailer: PHP/' . phpversion();
+	$ok = mail( $emailaddress, "Bundle sent to ".$repo, $message, $headers );
+	if( $ok == false ){
+	    echo "Error sending email message\n";
+	}
 	return true;
 }
 

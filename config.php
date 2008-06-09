@@ -18,6 +18,9 @@
 	
 	/* True if committing is active */
 	$git_commiting_active = true;
+	
+	/* E-mail address to notify about the bundles */
+	$emailaddress = "Peeter.Vois@proekspert.ee";
 
     $title  = "git";
     $repo_index = "index.aux";
