@@ -26,7 +26,7 @@
 // +------------------------------------------------------------------------+ 
 
 // this functions existance starts from php5
-function array_diff_ukey( $array1, $array2 )
+function array_diff_ukey1( $array1, $array2 )
 {
 	if( !is_array($array1) ) return array();
 	$a1 = array_keys( $array1 );
@@ -53,7 +53,7 @@ function html_ref( $arguments, $prefix )
 {
 	global $keepurl;
 
-	$diff = array_diff_ukey( $keepurl, $arguments );
+	$diff = array_diff_key( $keepurl, $arguments );
 	$ahref = $prefix.sanitized_url();
 	$a = array_keys( $diff );
 	foreach( $a as $d ){
