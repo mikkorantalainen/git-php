@@ -52,6 +52,8 @@ function html_ahref( $arguments, $class="" )
 function html_ref( $arguments, $prefix )
 {
 	global $keepurl;
+    
+    if( !is_array($keepurl) ) $keepurl = array();
 
 	$diff = array_diff_key( $keepurl, $arguments );
 	$ahref = $prefix.sanitized_url();
