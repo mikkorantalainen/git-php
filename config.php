@@ -11,7 +11,7 @@
     $git_logo = true;
 
 	/* True if the voting mechanism with SMS is active */
-	$git_sms_active = true;
+	$git_sms_active = false;
 
 	/* True if the bundle transfer is active */
 	$git_bundle_active = true;
@@ -22,17 +22,27 @@
 	/* E-mail address to notify about the bundles */
 	$emailaddress = "Peeter.Vois@proekspert.ee";
 
-    $title  = "git";
+    $title  = "Peeter's public repository";
     $repo_index = "index.aux";
     $repo_directory = "/home/peeter/public_html/git/";
     $cache_name=".cache/";
     $secret_name=".secrets/";
 	$bundle_name=".bundles/";
     $cache_directory = $repo_directory.$cache_name;
-    $http_method_prefix = "http://people.proekspert.ee/peeter/git/";
+
+    $repo_http_relpath = "/peeter/git/";
+    $http_server_name = "http://people.proekspert.ee";
+    $http_method_prefix = $http_server_name.$repo_http_relpath;
     $communication_link = "http://people.proekspert.ee/peeter/blog";
 
     //if git is not installed into standard path, we need to set the path
-    putenv( "PATH=/home/peeter/local/bin:/opt/j2sdk1.4/bin:/usr/local/bin:/usr/bin:/bin:/usr/bin/X11:/usr/games" );
-
+    $mypath= getenv("PATH");
+    $addpath = "/home/peeter/local/bin";
+    if (isset($mypath))
+    {
+        $mypath .= ":$addpath";
+    }
+    else
+     	$mypath = $addpath;
+    putenv("PATH=$mypath");
 ?>

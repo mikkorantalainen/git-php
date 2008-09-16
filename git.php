@@ -34,7 +34,8 @@
     global $http_method_prefix; // prefix path for http clone method
     global $communication_link; // link for sending a message to owner
 	global $failedarg;
-	global $cache_name;
+    global $cache_name;
+    global $repo_http_relpath;
 	global $tags;
 	global $branches;
 	global $nr_of_shortlog_lines;
@@ -316,7 +317,7 @@ $extEnscript = array
         $out = array();
         exec("GIT_DIR=".escapeshellarg($repo)." git-diff ".escapeshellarg($c['parent'])." ".
 			escapeshellarg($commit)." | enscript --language=html --color=1 --highlight=diffu -o - | sed -n \"/<PRE/,/<\\/PRE/p\"  ", &$out);
-        echo "<div class=\"gitcode\">\n";
+	echo "<div class=\"gitcode\">\n";
         echo implode("\n",$out);
         echo "</div>\n";
     }
@@ -354,7 +355,7 @@ $extEnscript = array
     }
 
     function html_shortlog($repo, $lines)   {
-        global $cache_name,$branches,$tags,$nr_of_shortlog_lines;
+        global $cache_name,$repo_http_relpath,$branches,$tags,$nr_of_shortlog_lines;
         $page=0;
 		$shortc["top"] = array();
 		$shortc["bot"] = array();
@@ -392,9 +393,10 @@ $extEnscript = array
 			else
 				echo html_ref( array('dl'=>"none"), "<img src=\"");
 		}
-		echo "</td><td></td><td></td><td></td></tr></div>\n";
+        echo "</td><td></td><td></td><td></td></tr></div>\n";
         for ($i = 0; ($i < $lines) && ($order[$i]!= ""); $i++)  {
             $c = git_commit($repo, $order[$i]);
+            //print_r($c);
             $date = date("n/j/y G:i", (int)$c['date']);
             $cid = $order[$i];
             $pid = $c['parent'];
@@ -420,7 +422,7 @@ $extEnscript = array
 			else
 				$tree = html_ahref( array( 'p'=>$_GET['p'], 'a'=>"jump_to_tag", 'tag'=>$cid, 'tr'=>$tid, 't'=>$tid, 'pg'=>"" )) ."tree</a>";
             echo "<tr><td>$date</td>";
-            echo "<td>".html_ahref(array( 'p'=>$_GET['p'], 'a'=>"jump_to_tag", 'tag'=>$cid ))."<img src=\"" . $cache_name . $repo. "/graph-".$cid.".png\" /></a></td>";
+            echo "<td>".html_ahref(array( 'p'=>$_GET['p'], 'a'=>"jump_to_tag", 'tag'=>$cid ))."<img src=\"" . $repo_http_relpath  . $cache_name . $repo. "/graph-".$cid.".png\" /></a></td>";
             echo "<td>{$auth}</td><td>";
 			if( in_array($cid,$branches) ) foreach( $branches as $symbolic => $hashic ) if( $hashic == $cid ) 
 				echo "<branches>".$symbolic."</branches> ";
@@ -449,7 +451,11 @@ $extEnscript = array
 		    if( $n>0 ) echo " | ";
 		    $n++;
 			if( $i > $maxr )
-				$i = $maxr;
+                $i = $maxr;
+            if ( $i == $maxr ){
+                echo "Total commits :$i";
+                break;
+            }
 		    if( $i == $page )
 		        echo "<b>[".$i."]</b>\n";
 		    else
@@ -490,7 +496,7 @@ function git_parse($repo, $what ){
 	$out1 = array();
 	$bran=array();
 	exec( $cmd1, &$out1 );
-	for( $i=0; $i < count( $out1 ); $i++ ){
+    for( $i=0; $i < count( $out1 ); $i++ ){
 	    $cmd2="GIT_DIR=".get_repo_path(basename($repo))." git-rev-list ";
     	$cmd2 .= "--max-count=1 ".escapeshellarg($out1[$i]);
 		$out2 = array();
@@ -516,8 +522,7 @@ function git_parse($repo, $what ){
 
     function html_home()    
 	{
-        global $repos, $git_sms_active; 
-		
+        global $repos, $git_sms_active; 	
         echo "<table>\n<tr>";
 		echo "<th>Project</th>";
 		echo "<th>Description</th>";
@@ -529,7 +534,7 @@ function git_parse($repo, $what ){
         echo "</tr>\n";
         foreach ($repos as $repo)   {
 			$today = 0; $total = 0; stat_get_count( $repo, $today, $total );
-			$votes = 0; get_votes( $repo, $votes );
+            $votes = 0; get_votes( $repo, $votes );
             $desc = short_desc(file_get_contents("$repo/description")); 
             $owner = get_file_owner($repo);
             $last =  get_last($repo);
@@ -563,12 +568,14 @@ function git_parse($repo, $what ){
     }
 
     function get_file_owner($path)  {
-        $s = stat($path);
-        $pw = posix_getpwuid($s["uid"]);
-        return preg_replace("/[,;]/", "", $pw["gecos"]);
-//        $out = array();
-//        $own = exec("GIT_DIR=".escapeshellarg($path)." git-rev-list  --header --max-count=1 HEAD | grep -a committer | cut -d' ' -f2-3" ,&$out);
-//        return $own;
+        //$s = stat($path);
+        //print_r($s);
+        //$pw = posix_getpwuid($s['uid']);
+        //echo("owner1");
+        //return preg_replace("/[,;]/", "", $pw["gecos"]);
+        $out = array();
+        $own = exec("GIT_DIR=".escapeshellarg($path)." git-rev-list  --header --max-count=1 HEAD | grep -a committer | cut -d' ' -f2-3" ,&$out);
+        return $own;
     }
 
     function get_last($repo)    {
