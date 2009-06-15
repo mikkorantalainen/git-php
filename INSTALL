@@ -1,0 +1,6 @@
+
+To setup git.php:
+
+- edit config.php
+- mkdir $repo_directory/.cache
+  with appropiate permissions
