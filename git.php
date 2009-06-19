@@ -592,8 +592,6 @@ function get_project_link($repo, $type = false, $tag="HEAD")    {
     return html_ahref( array( 'p'=>$path, 'dl'=>'targz', 'h'=>$tag ) ).".tar.gz</a>";
   else if ($type == "zip")
     return html_ahref( array( 'p'=>$path, 'dl'=>'zip', 'h'=>$tag ) ).".zip</a>";
-  else if ($type == "htvote" )
-    return '<a href="sms.php?p='.$path.'&amp;dl=htvote">';
 }
 
 function git_commit($repo, $cid)  {
