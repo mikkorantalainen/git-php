@@ -1,0 +1,25 @@
+This is only a rough unsorted collection
+of informations. The original git-php
+had no README at all :-(
+
+To setup git.php:
+
+- edit config.php
+- mkdir $repo_directory/.cache
+  with appropiate permissions
+
+Supposed directory structure:
+$repo_directory-\
+                |
+                +-$cache_name
+                |
+                +-$secret_name
+                |
+                +-$bundle_name
+                |
+                +-project1 / .git
+                |
+                +-project2 / .git
+                |
+                ...
+

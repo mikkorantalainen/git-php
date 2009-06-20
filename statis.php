@@ -36,6 +36,7 @@ function stat_get_count( $proj, &$today, &$total, $inc=false )
   file_stat_get_count( $proj, $today, $total, $inc, 'counters' );
 }
 
+// local function (only called from within this file.
 function file_stat_get_count( $proj, &$today, &$total, $inc, $fbasename )
 {
   global $cache_name;
