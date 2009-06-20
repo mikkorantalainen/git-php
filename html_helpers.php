@@ -114,7 +114,7 @@ function html_breadcrumbs()  {
 }
 
 function html_pages() {
-  global $git_sms_active, $git_bundle_active;
+  global $git_bundle_active;
   if( isset($_GET['p']) ){
     html_spacer();
     $now = floor(time()/15/60); // one hour

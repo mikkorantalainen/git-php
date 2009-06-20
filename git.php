@@ -522,7 +522,7 @@ function html_desc($repo)    {
 
 function html_home()    
 {
-  global $repos, $git_sms_active;       
+  global $repos;
   echo "<table>\n<tr>";
   echo "<th>Project</th>";
   echo "<th>Description</th>";
@@ -530,19 +530,16 @@ function html_home()
   echo "<th>Last Changed</th>";
   echo "<th>Download</th>";
   echo "<th>Hits</th>";
-  if( $git_sms_active ) echo "<th>Votes</th>";
   echo "</tr>\n";
   foreach ($repos as $repo)   {
     $today = 0; $total = 0; stat_get_count( $repo, $today, $total );
-    $votes = 0; get_votes( $repo, $votes );
     $desc = short_desc(file_get_contents("$repo/description")); 
     $owner = get_file_owner($repo);
     $last =  get_last($repo);
     $proj = get_project_link($repo);
     $dlt = get_project_link($repo, "targz");
     $dlz = get_project_link($repo, "zip");
-    $htvote = ""; if( $git_sms_active ) $htvote = "<td>".get_project_link($repo, "htvote")." $votes </a></td>";
-    echo "<tr><td>$proj</td><td>$desc</td><td>$owner</td><td>$last</td><td>$dlt | $dlz</td><td> ( $today / $total ) </td>$htvote</tr>\n";
+    echo "<tr><td>$proj</td><td>$desc</td><td>$owner</td><td>$last</td><td>$dlt | $dlz</td><td> ( $today / $total ) </td></tr>\n";
   }
   echo "</table>";
 }

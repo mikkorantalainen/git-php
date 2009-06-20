@@ -36,18 +36,6 @@ function stat_get_count( $proj, &$today, &$total, $inc=false )
   file_stat_get_count( $proj, $today, $total, $inc, 'counters' );
 }
 
-// *****************************************************************************
-// SMS voting 
-// http://fortumo.com/main/about_premium
-//
-
-
-function get_votes( $proj, &$total )
-{
-  $td = 0;
-  file_stat_get_count( $proj, $td, $total, false, 'votes' );
-}
-
 function file_stat_get_count( $proj, &$today, &$total, $inc, $fbasename )
 {
   global $cache_name;
