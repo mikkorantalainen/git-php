@@ -23,3 +23,19 @@ $repo_directory-\
                 |
                 ...
 
+
+Code/Variables:
+ (just for understanding code; doing cleanup)
+
+ $repos = all found $repo_path (security.php)
+
+ $proj = name of a Project (=its directories name)
+        with no leading or trailing slash !!
+
+ $repo_path = $repo_directory . $proj . "/"
+        is_dir ( $repo_path . "/.git" ) == true
+
+
+URL-parameter:
+ p: $proj
+ tr: any branch or tag or HEAD in a git-repo.

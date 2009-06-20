@@ -168,6 +168,7 @@ function is_sha1($val)
   return true;
 }
 
+/* Find repo_path for given project */
 function get_repo_path($proj)   {
   global $repos;
 
@@ -250,6 +251,7 @@ function create_secrets_directory()
     
   $dname = $repo_directory.$secret_name;
   if( create_directory( $dname ) == false ) return false;
+  /* TODO: This is Apache-specific. How to generalize? */
   $file = fopen( $dname.".htaccess", "w" ); 
   fwrite( $file, "Deny from all\n" );
   fclose( $file );
