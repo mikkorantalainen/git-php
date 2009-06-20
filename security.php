@@ -39,10 +39,13 @@ function security_load_repos()
               //printf( "%s,%d\n", $file, is_dir($repo_directory . "/" . $file) );
               if ($file[0] != '.' && is_dir($fullpath) ) 
                 {
-                  /* TODO: Check for valid git repos */
-                  // fill the security array.
-                  $validargs[] = trim($file);
-                  $repos[] = trim($fullpath);
+                  if ( is_dir($fullpath . "/.git") )
+                    {
+                      /* TODO: Check for valid git repos */
+                      // fill the security array.
+                      $validargs[] = trim($file);
+                      $repos[] = trim($fullpath . "/");
+                    }
                 }
             }
           closedir($handle);
@@ -237,7 +240,6 @@ function draw_human_checker( $amessage )
           }            
         }
     }
-  //imagepng( $im, "/home/peeter/public_html/test/proov.png" );
   imagepng( $im );
   die();
 }
