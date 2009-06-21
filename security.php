@@ -35,7 +35,7 @@ function security_load_repos()
         {
           while (false !== ($file = readdir($handle))) 
             {
-              $fullpath = $repo_directory . "/" . $file;
+              $fullpath = $repo_directory . $file;
               //printf( "%s,%d\n", $file, is_dir($repo_directory . "/" . $file) );
               if ($file[0] != '.' && is_dir($fullpath) ) 
                 {
@@ -81,14 +81,14 @@ function security_load_names()
   if( isset($_GET['p'] ) )
     {
       // now load the repository into validargs
-      $repo=$_GET['p'];
+      $proj=$_GET['p'];
       $out=array();
-      $branches=git_parse($repo, "branches" );
+      $branches=git_parse($proj, "branches" );
       foreach( array_keys($branches) as $tg )
         {
           $validargs[] = $tg;
         }
-      $tags=git_parse($repo, "tags");
+      $tags=git_parse($proj, "tags");
       foreach( array_keys($tags) as $tg )
         {
           $validargs[] = $tg;
@@ -97,7 +97,7 @@ function security_load_names()
       unset($out);
       $head="HEAD";
       if( isset( $_GET['tr'] ) && is_valid( $_GET['tr'] ) ) $head = $_GET['tr'];
-      $cmd="GIT_DIR=".get_repo_path(basename($repo))." git-ls-tree -r -t ".escapeshellarg($head)." | sed -e 's/\t/ /g'";
+      $cmd="GIT_DIR=".get_repo_path($proj).".git" . " git-ls-tree -r -t ".escapeshellarg($head)." | sed -e 's/\t/ /g'";
       exec($cmd, &$out);
       foreach ($out as $line) 
         {
