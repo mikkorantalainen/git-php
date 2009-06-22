@@ -28,7 +28,7 @@
 global $title;
 global $repos; // list of repositories
 global $validargs; // list of allowed arguments
-global $git_embed;
+global $git_embed; // is git-php embedded in other scripts (true) or runs on it own (false)?
 global $git_css;
 global $git_logo;
 global $http_method_prefix; // prefix path for http clone method

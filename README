@@ -32,7 +32,7 @@ Code/Variables:
  $proj = name of a Project (=its directories name)
         with no leading or trailing slash !!
 
- $repo_path = $repo_directory . $proj . "/"
+ $repopath = $repo_directory . $proj . "/"
         is_dir ( $repo_path . "/.git" ) == true
 
 

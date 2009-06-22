@@ -149,6 +149,8 @@ function html_footer()  {
 }
 
 /* TODO: cache this */
+// returns URL of this script
+// including any set GET-parameters of p, dl, b, a, h, t
 function sanitized_url()    {
   global $git_embed;
 
