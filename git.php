@@ -235,9 +235,9 @@ die();
 
 function html_summary($proj)    {
   global $nr_of_shortlog_lines;
-  $repo = get_repo_path($proj);
-  html_summary_title($repo);
-  html_desc($repo);
+  $repopath = get_repo_path($proj);
+  html_summary_title();
+  html_desc($repopath);
   if (!isset($_GET['t']) && !isset($_GET['b']))
     html_shortlog($proj, $nr_of_shortlog_lines );
   else
@@ -467,7 +467,7 @@ function html_shortlog($repo, $lines)   {
   echo "</table></div>\n";
 }
 
-function html_summary_title($repo){
+function html_summary_title(){
   global $branches, $tags, $nr_of_shortlog_lines;
   if( $_GET['a'] != "commitdiff" ){
     echo html_ref( array( 'p'=>$_GET['p'], 'a'=>"jump_to_tag" ),"<form method=post action=\"");
@@ -485,19 +485,18 @@ function html_summary_title($repo){
     echo "</select> and press <input type=\"submit\" name=\"branch_or_tag\" value=\"GO\">";
     echo " Lines to display <input type=\"text\" name=\"nr_of_shortlog_lines\" value=\"$nr_of_shortlog_lines\" size=\"3\"> <input type=\"submit\" name=\"branch_or_tag\" value=\"SET\"> \n";
     echo "</div></form>";
-    return $rval;
   } else {      
     echo "<div class=\"gittitle\">Summary</div>\n";
   }
 }
 
-function git_parse($repo, $what ){
-  $cmd1="GIT_DIR=".get_repo_path(basename($repo))." git-rev-parse  --symbolic --".escapeshellarg($what)."  ";
+function git_parse($proj, $what ){
+  $cmd1="GIT_DIR=".get_repo_path($proj).".git" . " git-rev-parse  --symbolic --".escapeshellarg($what)."  ";
   $out1 = array();
   $bran=array();
   exec( $cmd1, &$out1 );
   for( $i=0; $i < count( $out1 ); $i++ ){
-    $cmd2="GIT_DIR=".get_repo_path(basename($repo))." git-rev-list ";
+    $cmd2="GIT_DIR=".get_repo_path($proj).".git" . " git-rev-list ";
     $cmd2 .= "--max-count=1 ".escapeshellarg($out1[$i]);
     $out2 = array();
     exec( $cmd2, &$out2 );
@@ -507,11 +506,11 @@ function git_parse($repo, $what ){
   return  $bran;
 }
 
-function html_desc($repo)    {
+function html_desc($repopath)    {
         
-  $desc = file_get_contents("$repo/description"); 
-  $owner = get_file_owner($repo);
-  $last =  get_last($repo);
+  $desc = file_get_contents($repopath.".git/description");
+  $owner = get_file_owner($repopath);
+  $last =  get_last($repopath);
 
   echo "<table>\n";
   echo "<tr><td>description</td><td>$desc</td></tr>\n";
@@ -564,20 +563,26 @@ function get_git($repo) {
   return $gitdir;
 }
 
-function get_file_owner($path)  {
+function get_file_owner($repopath) {
   //$s = stat($path);
   //print_r($s);
   //$pw = posix_getpwuid($s['uid']);
   //echo("owner1");
   //return preg_replace("/[,;]/", "", $pw["gecos"]);
   $out = array();
-  $own = exec("GIT_DIR=".escapeshellarg($path)." git-rev-list  --header --max-count=1 HEAD | grep -a committer | cut -d' ' -f2-3" ,&$out);
+  $cmd = "GIT_DIR=".escapeshellarg($repopath.".git") . " git-rev-list  --header --max-count=1 HEAD ";
+  $cmd .= " | grep -a committer";
+  $cmd .= " | cut -d' ' -f2-3";
+  $own = exec($cmd,&$out);
   return $own;
 }
 
-function get_last($repo)    {
+function get_last($repopath) {
   $out = array();
-  $date = exec("GIT_DIR=".escapeshellarg($repo)." git-rev-list  --header --max-count=1 HEAD | grep -a committer | cut -f5-6 -d' '", &$out);
+  $cmd = "GIT_DIR=".escapeshellarg($repopath.".git")." git-rev-list  --header --max-count=1 HEAD";
+  $cmd .= " | grep -a committer";
+  $cmd .= " | cut -f5-6 -d' '";
+  $date = exec($cmd, &$out);
   return date("D n/j/y G:i", (int)$date);
 }
 
