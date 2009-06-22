@@ -578,12 +578,13 @@ function get_file_owner($repopath) {
 }
 
 function get_last($repopath) {
+  global $git_date_format;
   $out = array();
-  $cmd = "GIT_DIR=".escapeshellarg($repopath.".git")." git-rev-list  --header --max-count=1 HEAD";
+  $cmd = "GIT_DIR=".escapeshellarg($repopath.".git") . " git-rev-list  --header --max-count=1 HEAD";
   $cmd .= " | grep -a committer";
-  $cmd .= " | cut -f5-6 -d' '";
+  $cmd .= " | cut -d' ' -f5-6";
   $date = exec($cmd, &$out);
-  return date("D n/j/y G:i", (int)$date);
+  return date($git_date_format, (int)$date);
 }
 
 function get_project_link($repo, $type = false, $tag="HEAD")    {
