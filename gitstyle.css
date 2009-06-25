@@ -109,7 +109,7 @@ div.imgtable tr
   height: auto;
   vertical-align: middle;
   font-size: 9px;
-  line-height: 15px;
+/*  line-height: 15px;*/
   }
 
 tr:hover
