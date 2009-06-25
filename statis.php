@@ -43,7 +43,7 @@ function file_stat_get_count( $proj, &$today, &$total, $inc, $fbasename )
   $rtoday = 0;
   $rtotal = 0;
   $now = floor(time()/24/60/60); // number of days since 1970
-  $fname = dirname($proj)."/".$cache_name."/".$fbasename."-".basename($proj,".git");
+  $fname = dirname($proj)."/".$cache_name.$fbasename."-".basename($proj,".git");
   $fd = 0;
   
   
