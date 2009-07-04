@@ -2,6 +2,12 @@ This is only a rough unsorted collection
 of informations. The original git-php
 had no README at all :-(
 
+
+requirements:
+- git
+- enscript
+
+
 To setup git.php:
 
 - edit config.php
