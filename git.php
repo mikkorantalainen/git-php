@@ -532,7 +532,7 @@ function html_home()
   echo "</tr>\n";
   foreach ($repos as $repo)   {
     $today = 0; $total = 0; stat_get_count( $repo, $today, $total );
-    $desc = short_desc(file_get_contents("$repo/description")); 
+    $desc = short_desc(file_get_contents($repo.".git/description"));
     $owner = get_file_owner($repo);
     $last =  get_last($repo);
     $proj = get_project_link($repo);
