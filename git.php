@@ -397,7 +397,7 @@ function html_shortlog($repo, $lines)   {
   for ($i = 0; ($i < $lines) && ($order[$i]!= ""); $i++)  {
     $c = git_commit($repo, $order[$i]);
     //print_r($c);
-    $date = date("n/j/y G:i", (int)$c['date']);
+    $date = date($git_date_format, (int)$c['date']);
     $cid = $order[$i];
     $pid = $c['parent'];
     $mess = short_desc($c['message'], 40);
