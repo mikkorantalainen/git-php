@@ -543,17 +543,6 @@ function html_home()
   echo "</table>";
 }
 
-function git_tree_head($gitdir) {
-  return git_tree($gitdir, "HEAD");
-}
-
-function git_tree($gitdir, $tree) {
-
-  $out = array();
-  $command = "GIT_DIR=".escapeshellarg($gitdir)." git-ls-tree --name-only ".escapeshellarg($tree);
-  exec($command, &$out);
-}
-
 function get_git($repo) {
 
   if (file_exists("$repo/.git"))
