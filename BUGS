@@ -1,0 +1,6 @@
+#1- Repos are not shown
+
+It appears that when installing this into my test directory,
+then git.php is not able to take the projects out of another
+directory.
+
