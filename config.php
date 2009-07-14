@@ -35,7 +35,7 @@
     $repo_suffix = '';
     
     /* The date format to show the dates of commits */
-    $git_date_format = 'd.m.Y (h:i)';
+    $git_date_format = 'd.m.Y (H:i)';
     
     $cache_name=".cache/";
     $secret_name=".secrets/";
