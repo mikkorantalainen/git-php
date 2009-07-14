@@ -272,7 +272,7 @@ function html_help($proj)    {
 }
 
 function html_blob($proj, $blob)    {
-  global $extEnscript;
+  global $extEnscript, $repo_suffix;
   $repopath = get_repo_path($proj);
   $out = array();
   $name=$_GET['n'];
@@ -284,7 +284,7 @@ function html_blob($proj, $blob)    {
   if( $ext == "" )
     {
       //echo "nonhighlight!";
-      $cmd="GIT_DIR=".escapeshellarg($repopath . ".git")." git-cat-file blob ".escapeshellarg($blob);
+      $cmd="GIT_DIR=".escapeshellarg($repopath . $repo_suffix)." git-cat-file blob ".escapeshellarg($blob);
       exec( $cmd, &$out );
       $out = "<PRE>".htmlspecialchars(implode("\n",$out))."</PRE>";
       echo "$out";
@@ -292,7 +292,7 @@ function html_blob($proj, $blob)    {
     }
   else if( $ext == "php" )
     {
-      $cmd="GIT_DIR=".escapeshellarg($repopath . ".git")." git-cat-file blob ".escapeshellarg($blob);
+      $cmd="GIT_DIR=".escapeshellarg($repopath . $repo_suffix)." git-cat-file blob ".escapeshellarg($blob);
       exec( $cmd, &$out );
       //$out = "<PRE>".htmlspecialchars(implode("\n",$out))."</PRE>";
       highlight_string( implode("\n",$out) );
@@ -301,7 +301,7 @@ function html_blob($proj, $blob)    {
     {
       //echo "highlight";
       $result=0;
-      $cmd="GIT_DIR=".escapeshellarg($repopath . ".git")." git-cat-file blob ".escapeshellarg($blob).
+      $cmd="GIT_DIR=".escapeshellarg($repopath . $repo_suffix)." git-cat-file blob ".escapeshellarg($blob).
         "| enscript --language=html --color=1 --highlight=".escapeshellarg($ext)." -o - | sed -n \"/<PRE/,/<\\/PRE/p\" ";
       exec("$cmd", &$out);
       $out = implode("\n",$out);
@@ -311,11 +311,12 @@ function html_blob($proj, $blob)    {
 }
 
 function html_diff($proj, $commit)    {
+  global $repo_suffix;
   $repopath = get_repo_path($proj);
   //$c = git_commit( $proj, $commit );
   $c['parent'] = $_GET['hb'];
   $out = array();
-  exec("GIT_DIR=".escapeshellarg($repopath.".git")." git-diff ".escapeshellarg($c['parent'])." ".
+  exec("GIT_DIR=".escapeshellarg($repopath.$repo_suffix)." git-diff ".escapeshellarg($c['parent'])." ".
        escapeshellarg($commit)." | enscript --language=html --color=1 --highlight=diffu -o - | sed -n \"/<PRE/,/<\\/PRE/p\"  ", &$out);
   echo "<div class=\"gitcode\">\n";
   echo implode("\n",$out);
@@ -491,12 +492,13 @@ function html_summary_title(){
 }
 
 function git_parse($proj, $what ){
-  $cmd1="GIT_DIR=".get_repo_path($proj).".git" . " git-rev-parse  --symbolic --".escapeshellarg($what)."  ";
+  global $repo_suffix;
+  $cmd1="GIT_DIR=".get_repo_path($proj).$repo_suffix . " git-rev-parse  --symbolic --".escapeshellarg($what)."  ";
   $out1 = array();
   $bran=array();
   exec( $cmd1, &$out1 );
   for( $i=0; $i < count( $out1 ); $i++ ){
-    $cmd2="GIT_DIR=".get_repo_path($proj).".git" . " git-rev-list ";
+    $cmd2="GIT_DIR=".get_repo_path($proj).$repo_suffix . " git-rev-list ";
     $cmd2 .= "--max-count=1 ".escapeshellarg($out1[$i]);
     $out2 = array();
     exec( $cmd2, &$out2 );
@@ -507,8 +509,8 @@ function git_parse($proj, $what ){
 }
 
 function html_desc($repopath)    {
-        
-  $desc = file_get_contents($repopath.".git/description");
+  global $repo_suffix;      
+  $desc = file_get_contents($repopath.$repo_suffix."/description");
   $owner = get_file_owner($repopath);
   $last =  get_last($repopath);
 
@@ -521,7 +523,7 @@ function html_desc($repopath)    {
 
 function html_home()    
 {
-  global $repos;
+  global $repos, $repo_suffix;
   echo "<table>\n<tr>";
   echo "<th>Project</th>";
   echo "<th>Description</th>";
@@ -532,7 +534,7 @@ function html_home()
   echo "</tr>\n";
   foreach ($repos as $repo)   {
     $today = 0; $total = 0; stat_get_count( $repo, $today, $total );
-    $desc = short_desc(file_get_contents($repo.".git/description"));
+    $desc = short_desc(file_get_contents($repo.$repo_suffix."/description"));
     $owner = get_file_owner($repo);
     $last =  get_last($repo);
     $proj = get_project_link($repo);
@@ -544,9 +546,9 @@ function html_home()
 }
 
 function get_git($repo) {
-
-  if (file_exists("$repo/.git"))
-    $gitdir = "$repo/.git";
+  global $repo_suffix;
+  if (file_exists("$repo".$repo_suffix))
+    $gitdir = "$repo".$repo_suffix;
   else
     $gitdir = $repo;
   return $gitdir;
@@ -558,8 +560,9 @@ function get_file_owner($repopath) {
   //$pw = posix_getpwuid($s['uid']);
   //echo("owner1");
   //return preg_replace("/[,;]/", "", $pw["gecos"]);
+  global $repo_suffix;
   $out = array();
-  $cmd = "GIT_DIR=".escapeshellarg($repopath.".git") . " git-rev-list  --header --max-count=1 HEAD ";
+  $cmd = "GIT_DIR=".escapeshellarg($repopath.$repo_suffix) . " git-rev-list  --header --max-count=1 HEAD ";
   $cmd .= " | grep -a committer";
   $cmd .= " | cut -d' ' -f2-3";
   $own = exec($cmd,&$out);
@@ -567,9 +570,9 @@ function get_file_owner($repopath) {
 }
 
 function get_last($repopath) {
-  global $git_date_format;
+  global $git_date_format, $repo_suffix;
   $out = array();
-  $cmd = "GIT_DIR=".escapeshellarg($repopath.".git") . " git-rev-list  --header --max-count=1 HEAD";
+  $cmd = "GIT_DIR=".escapeshellarg($repopath.$repo_suffix) . " git-rev-list  --header --max-count=1 HEAD";
   $cmd .= " | grep -a committer";
   $cmd .= " | cut -d' ' -f5-6";
   $date = exec($cmd, &$out);
@@ -587,14 +590,14 @@ function get_project_link($repo, $type = false, $tag="HEAD")    {
 }
 
 function git_commit($proj, $cid)  {
-  global $repo_directory;
+  global $repo_directory, $repo_suffix;
   $out = array();
   $commit = array();
 
   if (strlen($cid) <= 0)
     return 0;
 
-  $cmd="GIT_DIR=".escapeshellarg($repo_directory.$proj."/.git")." git-rev-list ";
+  $cmd="GIT_DIR=".escapeshellarg($repo_directory.$proj.$repo_suffix)." git-rev-list ";
   $cmd .= "--max-count=1 ";
   $cmd .= "--pretty=format:\"";
   $cmd .= "parents %P%n";
@@ -642,11 +645,12 @@ function git_commit($proj, $cid)  {
 }
 
 function git_ls_tree($repopath, $tree) {
+  global $repo_suffix;
   $ary = array();
             
   $out = array();
   //Have to strip the \t between hash and file
-  exec("GIT_DIR=".escapeshellarg($repopath.".git")." git-ls-tree ".escapeshellarg($tree)." | sed -e 's/\t/ /g'", &$out);
+  exec("GIT_DIR=".escapeshellarg($repopath.$repo_suffix)." git-ls-tree ".escapeshellarg($tree)." | sed -e 's/\t/ /g'", &$out);
 
   foreach ($out as $line) {
     $entry = array();
@@ -661,21 +665,23 @@ function git_ls_tree($repopath, $tree) {
 }
 
 function write_plain() {
+  global $repo_suffix;
   $repopath = get_repo_path($_GET['p']);
   $name = $_GET['n'];
   $hash = $_GET['h'];
   $out = array();
-  exec("GIT_DIR=".escapeshellarg($repopath.".git")." git-cat-file blob ".escapeshellarg($hash), &$out);
+  exec("GIT_DIR=".escapeshellarg($repopath.$repo_suffix)." git-cat-file blob ".escapeshellarg($hash), &$out);
   header("Content-Type: text/plain");
   echo implode("\n",$out);
   die();
 }
         
 function write_dlfile()  {
+  global $repo_suffix;
   $repopath = get_repo_path($_GET['p']);
   $name = $_GET['n'];
   $hash = $_GET['h'];
-  exec("GIT_DIR=".escapeshellarg($repopath.".git")." git-cat-file blob ".escapeshellarg($hash)." > ".escapeshellarg("/tmp/$hash.$name"));
+  exec("GIT_DIR=".escapeshellarg($repopath.$repo_suffix)." git-cat-file blob ".escapeshellarg($hash)." > ".escapeshellarg("/tmp/$hash.$name"));
   $filesize = filesize("/tmp/$hash.$name");
   header("Pragma: public"); // required
   header("Expires: 0");
@@ -699,6 +705,7 @@ function hash_to_tag( $hash ){
 }
         
 function write_targz($repo) {
+  global $repo_suffix;
   $p = basename($repo);
   $head = hash_to_tag($_GET['h']);
   $proj = explode(".", $p);
@@ -723,6 +730,7 @@ function write_targz($repo) {
 }
 
 function write_zip($repo) {
+  global $repo_suffix;
   $p = basename($repo);
   $head = hash_to_tag($_GET['h']);
   $proj = explode(".", $p);
@@ -897,9 +905,9 @@ function highlight_code($code) {
         
 function git_number_of_commits( $proj )
 {
-  global $repo_directory;
+  global $repo_directory, $repo_suffix;
         
-  $cmd="GIT_DIR=".escapeshellarg($repo_directory.$proj."/.git")." git-rev-list --all --full-history | grep -c \"\" ";
+  $cmd="GIT_DIR=".escapeshellarg($repo_directory.$proj.$repo_suffix)." git-rev-list --all --full-history | grep -c \"\" ";
   unset($out);
   $out = array();
   //echo "$cmd\n";
@@ -981,11 +989,11 @@ function analyze_hierarchy( &$vin, &$pin, &$commit, &$coord, &$parents, &$nr, &$
 
 function create_images_starting( $proj, &$retpage, $lines, $commit_name, &$shortc ){
 
-  global $repo_directory, $cache_directory;
+  global $repo_directory, $cache_directory, $repo_suffix;
   $dirname=$cache_directory.$proj;
   create_cache_directory( $proj );
         
-  $cmd="GIT_DIR=".escapeshellarg($repo_directory.$proj."/.git")." git-rev-list ";
+  $cmd="GIT_DIR=".escapeshellarg($repo_directory.$proj.$repo_suffix)." git-rev-list ";
   $cmd .= "--max-count=1 ".escapeshellarg($commit_name);
   unset($out);
   $out = array();
@@ -1012,7 +1020,7 @@ function create_images_starting( $proj, &$retpage, $lines, $commit_name, &$short
   $childs = array( "." ); // sliding place for shortc[top]
   do{
     unset($cmd);
-    $cmd="GIT_DIR=".escapeshellarg($repo_directory.$proj."/.git")." git-rev-list --all --full-history --topo-order ";
+    $cmd="GIT_DIR=".escapeshellarg($repo_directory.$proj.$repo_suffix)." git-rev-list --all --full-history --topo-order ";
     $cmd .= "--max-count=1000 --skip=" .escapeshellarg($nr) ." ";
     $cmd .= "--pretty=format:\"";
     $cmd .= "parents %P%n";
@@ -1083,7 +1091,7 @@ function create_images_starting( $proj, &$retpage, $lines, $commit_name, &$short
 }
 
 function create_images_parents( $proj, &$retpage, $lines, $commit, &$shortc ){
-  global $repo_directory, $cache_directory;
+  global $repo_directory, $cache_directory, $repo_suffix;
   $dirname=$cache_directory.$proj;
   create_cache_directory( $proj );
 
@@ -1105,7 +1113,7 @@ function create_images_parents( $proj, &$retpage, $lines, $commit, &$shortc ){
   $childs = array( "." ); // sliding place fore shortc[top]
   do{
     unset($cmd);
-    $cmd="GIT_DIR=".escapeshellarg($repo_directory.$proj."/.git")." git-rev-list --all --full-history --topo-order ";
+    $cmd="GIT_DIR=".escapeshellarg($repo_directory.$proj.$repo_suffix)." git-rev-list --all --full-history --topo-order ";
     $cmd .= "--max-count=1000 --skip=" .escapeshellarg($nr) ." ";
     $cmd .= "--pretty=format:\"";
     $cmd .= "parents %P%n";
@@ -1176,7 +1184,7 @@ function create_images_parents( $proj, &$retpage, $lines, $commit, &$shortc ){
 }
 
 function create_images( $proj, $page, $lines, &$shortc ){
-  global $repo_directory, $cache_directory;
+  global $repo_directory, $cache_directory, $repo_suffix;
   $dirname=$cache_directory.$proj;
   create_cache_directory( $proj );
         
@@ -1194,7 +1202,7 @@ function create_images( $proj, $page, $lines, &$shortc ){
   $childs = array( "." ); // sliding place fore shortc[top]
   do{
     unset($cmd);
-    $cmd="GIT_DIR=".escapeshellarg($repo_directory.$proj."/.git")." git-rev-list --all --full-history --topo-order ";
+    $cmd="GIT_DIR=".escapeshellarg($repo_directory.$proj.$repo_suffix)." git-rev-list --all --full-history --topo-order ";
     $cmd .= "--max-count=1000 --skip=" .escapeshellarg($nr) ." ";
     $cmd .= "--pretty=format:\"";
     $cmd .= "parents %P%n";

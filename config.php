@@ -24,7 +24,19 @@
 
     $title  = "Peeter's public repository";
     $repo_index = "index.aux";
+    
+    /* The directory where repo directories resist */
     $repo_directory = "/home/peeter/public_html/git/";
+    
+    /* The suffix, that can be used for complementing the repo directory,
+    useful when you are using nonbare repositories, then:
+    $repo_suffix = '/.git/';
+    */
+    $repo_suffix = '';
+    
+    /* The date format to show the dates of commits */
+    $git_date_format = 'd.m.Y (h:i)';
+    
     $cache_name=".cache/";
     $secret_name=".secrets/";
 	$bundle_name=".bundles/";
