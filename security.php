@@ -43,8 +43,10 @@ function security_load_repos()
                     {
                       /* TODO: Check for valid git repos */
                       // fill the security array.
+                      $temp = trim($fullpath . "/");
+                      $proj = basename($temp);
                       $validargs[] = trim($file);
-                      $repos[] = trim($fullpath . "/");
+                      $repos[$proj] = $temp;
                     }
                 }
             }
