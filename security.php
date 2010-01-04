@@ -169,6 +169,17 @@ function is_sha1($val)
   return true;
 }
 
+/* Is given path a valid git-repository */
+function is_gitpath($path) {
+  $out = array();
+  unset($ret_val);
+  $cmd = "GIT_DIR=".escapeshellarg($path)." git-rev-parse --git-dir";
+  exec($cmd, &$out, &$ret_val);
+  if ($ret_val > 0)
+    { return FALSE; }
+  return TRUE;
+}
+
 /* Find repo_path for given project */
 function get_repo_path($proj)   {
   global $repos;
