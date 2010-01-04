@@ -183,12 +183,10 @@ function is_gitpath($path) {
 /* Find repo_path for given project */
 function get_repo_path($proj)   {
   global $repos;
-
-  foreach ($repos as $repo)   {
-    $path = basename($repo);
-    if ($path == $proj)
-      return $repo;
-  }
+  if ( isset($repos[$proj]) )
+    {
+      return $repos[$proj];
+    }
   return "";
 }
 
