@@ -53,7 +53,6 @@ function security_load_repos()
           closedir($handle);
         } 
     }
-  sort($repos);
 
   // check for cookie attack
   if( isset($_COOKIE['validargs']) )
