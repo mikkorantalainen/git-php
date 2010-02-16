@@ -39,14 +39,20 @@ function security_load_repos()
               //printf( "%s,%d\n", $file, is_dir($repo_directory . "/" . $file) );
               if ($file[0] != '.' && is_dir($fullpath) ) 
                 {
-                  if ( is_dir($fullpath . $repo_suffix) )
+                  $temp = trim($fullpath . "/");
+                  $proj = basename($temp);
+                  if ( is_gitpath($temp) )
                     {
-                      /* TODO: Check for valid git repos */
-                      // fill the security array.
-                      $temp = trim($fullpath . "/");
-                      $proj = basename($temp);
                       $validargs[] = trim($file);
                       $repos[$proj] = $temp;
+                      continue;
+                    }
+                  $temp .= '.git/';
+                  if ( is_gitpath($temp) )
+                    {
+                      $validargs[] = trim($file);
+                      $repos[$proj] = $temp;
+                      continue;
                     }
                 }
             }
