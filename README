@@ -34,6 +34,7 @@ Code/Variables:
  (just for understanding code; doing cleanup)
 
  $repos = all found $repo_path (security.php)
+          uses $proj as index!
 
  $proj = name of a Project (=its directories name)
         with no leading or trailing slash !!
