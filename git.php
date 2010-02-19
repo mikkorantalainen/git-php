@@ -67,7 +67,7 @@ if( isset($_GET['p']) )
     if( $_GET['dl'] != 'rss2' ) // do not count the rss2 requests
       if( (floor(time()/15/60)-intval($_GET['tm'])) > 4 ) // do not count the one hour session
         if( ((count($_GET) > 1) && isset($_GET['tm'])) || count($_GET) == 1 ) // prevent counting if no time set and more than one argument given
-          stat_inc_count( get_repo_path($_GET['p']) );
+          stat_inc_count( $_GET['p'] );
   }
 
 // add some keywords to valid array
@@ -532,15 +532,15 @@ function html_home()
   echo "<th>Download</th>";
   echo "<th>Hits</th>";
   echo "</tr>\n";
-  foreach ($repos as $repo)   {
-    $today = 0; $total = 0; stat_get_count( $repo, $today, $total );
+  foreach ($repos as $proj => $repo)   {
+    $today = 0; $total = 0; stat_get_count( $proj, $today, $total );
     $desc = short_desc(file_get_contents($repo.$repo_suffix."/description"));
     $owner = get_file_owner($repo);
     $last =  get_last($repo);
-    $proj = get_project_link($repo);
-    $dlt = get_project_link($repo, "targz");
-    $dlz = get_project_link($repo, "zip");
-    echo "<tr><td>$proj</td><td>$desc</td><td>$owner</td><td>$last</td><td>$dlt | $dlz</td><td> ( $today / $total ) </td></tr>\n";
+    $project = get_project_link($proj);
+    $dlt = get_project_link($proj, "targz");
+    $dlz = get_project_link($proj, "zip");
+    echo "<tr><td>$project</td><td>$desc</td><td>$owner</td><td>$last</td><td>$dlt | $dlz</td><td> ( $today / $total ) </td></tr>\n";
   }
   echo "</table>";
 }
@@ -579,14 +579,13 @@ function get_last($repopath) {
   return date($git_date_format, (int)$date);
 }
 
-function get_project_link($repo, $type = false, $tag="HEAD")    {
-  $path = basename($repo);
+function get_project_link($proj, $type = false, $tag="HEAD")    {
   if (!$type)
-    return "<a href=\"".sanitized_url()."p=$path\">$path</a>";
+    return "<a href=\"".sanitized_url()."p=$proj\">$proj</a>";
   else if ($type == "targz")
-    return html_ahref( array( 'p'=>$path, 'dl'=>'targz', 'h'=>$tag ) ).".tar.gz</a>";
+    return html_ahref( array( 'p'=>$proj, 'dl'=>'targz', 'h'=>$tag ) ).".tar.gz</a>";
   else if ($type == "zip")
-    return html_ahref( array( 'p'=>$path, 'dl'=>'zip', 'h'=>$tag ) ).".zip</a>";
+    return html_ahref( array( 'p'=>$proj, 'dl'=>'zip', 'h'=>$tag ) ).".zip</a>";
 }
 
 function git_commit($proj, $cid)  {
@@ -696,7 +695,8 @@ function write_dlfile()  {
   die();
 }
 
-function hash_to_tag( $hash ){
+function hash_to_tag( $hash )
+{
   global $tags;
   if( in_array( $hash, $tags, true ) ){
     return array_search( $hash, $tags, true );
@@ -704,13 +704,11 @@ function hash_to_tag( $hash ){
   return $hash;
 }
         
-function write_targz($repo) {
-  global $repo_suffix;
-  $p = basename($repo);
+function write_targz($proj)
+{
+  $repopath = get_repo_path( $proj );
   $head = hash_to_tag($_GET['h']);
-  $proj = explode(".", $p);
-  $proj = $proj[0]; 
-  exec("cd /tmp && git-clone ".escapeshellarg($repo)." ".escapeshellarg($proj)." && cd ".
+  exec("cd /tmp && git-clone ".escapeshellarg($repopath)." ".escapeshellarg($proj)." && cd ".
        escapeshellarg($proj)." && git-checkout ".escapeshellarg($head).
        " && cd /tmp && rm -Rf ".escapeshellarg("/tmp/$proj/.git")." && tar czvf ".
        escapeshellarg("$proj-$head.tar.gz")." ".escapeshellarg($proj));
@@ -729,13 +727,11 @@ function write_targz($repo) {
   die();
 }
 
-function write_zip($repo) {
-  global $repo_suffix;
-  $p = basename($repo);
+function write_zip($proj)
+{
+  $repopath = get_repo_path( $proj );
   $head = hash_to_tag($_GET['h']);
-  $proj = explode(".", $p);
-  $proj = $proj[0]; 
-  exec("cd /tmp && git-clone ".escapeshellarg($repo)." ".escapeshellarg($proj)." && cd ".
+  exec("cd /tmp && git-clone ".escapeshellarg($repopath)." ".escapeshellarg($proj)." && cd ".
        escapeshellarg($proj)." && git-checkout ".escapeshellarg($head)." && cd /tmp && rm -Rf ".escapeshellarg("/tmp/$proj/.git").
        " && zip -r ".escapeshellarg("$proj-$head.zip")." ".escapeshellarg($proj));
   exec("rm -Rf ".escapeshellarg("/tmp/$proj"));
@@ -918,10 +914,10 @@ function git_number_of_commits( $proj )
 // *****************************************************************************
 // Graph tree drawing section
 //
-function create_cache_directory( $repo )
+function create_cache_directory( $proj )
 {
-  global $repo_directory, $cache_directory;
-  $dirname=$cache_directory.$repo;
+  global $cache_directory;
+  $dirname=$cache_directory.$proj;
         
   create_directory( $dirname );
 }

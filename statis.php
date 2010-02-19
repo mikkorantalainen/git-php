@@ -39,11 +39,11 @@ function stat_get_count( $proj, &$today, &$total, $inc=false )
 // local function (only called from within this file.
 function file_stat_get_count( $proj, &$today, &$total, $inc, $fbasename )
 {
-  global $cache_name, $repo_suffix;
+  global $cache_name, $repo_suffix, $repo_directory;
   $rtoday = 0;
   $rtotal = 0;
   $now = floor(time()/24/60/60); // number of days since 1970
-  $fname = dirname($proj)."/".$cache_name.$fbasename."-".basename($proj,".git");
+  $fname = $repo_directory.$cache_name.$fbasename."-".basename($proj,".git");
   $fd = 0;
   
   
