@@ -28,12 +28,6 @@
     /* The directory where repo directories resist */
     $repo_directory = "/home/peeter/public_html/git/";
     
-    /* The suffix, that can be used for complementing the repo directory,
-    useful when you are using nonbare repositories, then:
-    $repo_suffix = '/.git/';
-    */
-    $repo_suffix = '';
-    
     /* The date format to show the dates of commits */
     $git_date_format = 'd.m.Y (H:i)';
     
