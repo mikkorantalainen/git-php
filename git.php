@@ -545,15 +545,6 @@ function html_home()
   echo "</table>";
 }
 
-function get_git($repo) {
-  global $repo_suffix;
-  if (file_exists("$repo".$repo_suffix))
-    $gitdir = "$repo".$repo_suffix;
-  else
-    $gitdir = $repo;
-  return $gitdir;
-}
-
 function get_file_owner($repopath) {
   //$s = stat($path);
   //print_r($s);
