@@ -27,7 +27,7 @@
 
 function security_load_repos() 
 {
-  global $repo_directory, $repo_suffix, $validargs, $repos;
+  global $repo_directory, $validargs, $repos;
 
   if( isset($repo_directory) && file_exists($repo_directory) && is_dir($repo_directory))
     {
@@ -83,7 +83,7 @@ function security_test_repository_arg()
 
 function security_load_names()
 {
-  global $validargs, $repo_direcotry, $repo_suffix, $branches, $tags;
+  global $validargs, $repo_direcotry, $branches, $tags;
 
   if( isset($_GET['p'] ) )
     {
@@ -104,7 +104,7 @@ function security_load_names()
       unset($out);
       $head="HEAD";
       if( isset( $_GET['tr'] ) && is_valid( $_GET['tr'] ) ) $head = $_GET['tr'];
-      $cmd="GIT_DIR=".get_repo_path($proj).$repo_suffix . " git-ls-tree -r -t ".escapeshellarg($head)." | sed -e 's/\t/ /g'";
+      $cmd="GIT_DIR=".escapeshellarg(get_repo_path($proj)). " git-ls-tree -r -t ".escapeshellarg($head)." | sed -e 's/\t/ /g'";
       exec($cmd, &$out);
       foreach ($out as $line) 
         {
