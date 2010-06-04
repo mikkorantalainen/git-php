@@ -38,15 +38,17 @@
 
     $title  = "git";
     $repo_index = "index.aux";
-
+    
     //repos could be made by an embeder script
-    if (!is_array($repos))
+    if (!is_array($repos)) {
         $repos = array();
-
+    }
+    
     if (file_exists($repo_index))   {
         $r = file($repo_index);
-        foreach ($r as $repo)
-            $repos[] = trim($repo);
+        foreach ($r as $repo){
+          $repos[] = trim($repo);
+        }
     }
     else if((file_exists($repo_directory)) && (is_dir($repo_directory))){
         if ($handle = opendir($repo_directory)) {
@@ -59,7 +61,7 @@
             closedir($handle);
         } 
     }
-    else    
+    else {    
         $repos = array(
             "/home/zack/scm/afa.git",
             "/home/zack/scm/nurikabe.git",
@@ -84,12 +86,14 @@
             "/home/zack/scm/zoogle.git",
             "/home/zack/scm/hello-servlet.git",
         );
-
+    }
+    
     sort($repos);
 
-    if (!isset($git_embed) && $git_embed != true)
-        $git_embed = false;
-
+    if (!isset($git_embed) && $git_embed != true) {
+      $git_embed = false;
+    }
+    
     foreach ($_GET as $var=>$val)
     {
         $_GET[$var] = str_replace(";", "", $_GET[$var]);
@@ -118,11 +122,11 @@
         html_title("Summary");
         html_summary($_GET['p']);
         html_spacer();
-        if ($_GET['a'] == "commitdiff")
-            html_diff($_GET['p'], $_GET['h'], $_GET['hb']);
-        else    {
-            html_title("Files");
-            html_browse($_GET['p']);
+        if ($_GET['a'] == "commitdiff") {
+          html_diff($_GET['p'], $_GET['h'], $_GET['hb']);
+        } else {
+          html_title("Files");
+          html_browse($_GET['p']);
         }
     }
     else    {
@@ -132,11 +136,13 @@
 
     html_footer();
 
+
     function html_summary($proj)    {
-        $repo = get_repo_path($proj);
-        html_desc($repo);
-        if (!isset($_GET['t']) && !isset($_GET['b']))
-            html_shortlog($repo, 6);
+      $repo = get_repo_path($proj);
+      html_desc($repo);
+      if (!isset($_GET['t']) && !isset($_GET['b'])) {
+        html_shortlog($repo, 6);
+      }
     }
 
     function html_browse($proj)   {
@@ -158,21 +164,36 @@
         $out = array();
         $plain = "<a href=\"".sanitized_url()."p=$proj&dl=plain&h=$blob\">plain</a>";
         echo "<div style=\"float:right;padding:7px;\">$plain</div>\n";
-        exec("GIT_DIR=$repo git-cat-file blob $blob", &$out);
+        exec("GIT_DIR=$repo git cat-file blob $blob", &$out);
         echo "<div class=\"gitcode\">\n";
+        
         //echo highlight(implode("\n", $out));
         //echo highlight_code(implode("\n",$out));
         highlight_string(implode("\n",$out));
         //echo pretty_code(implode("\n", $out));
+        
         echo "</div>\n";
     }
 
-    function html_diff($proj, $commit, $parent)    {
+    function html_diff($proj, $parent, $commit) {
         $repo = get_repo_path($proj);
+        $repo = get_git($repo);
+        
         $out = array();
-        exec("GIT_DIR=$repo git-diff $parent $commit", &$out);
+        $command = "GIT_DIR=$repo git-diff $parent $commit";
+        exec($command, &$out);
+        if(count($out) == 0) {
+          $command = "GIT_DIR=$repo git diff $parent $commit";
+          exec($command, &$out);
+        }
+        
+        $source = implode("\n", $out);
+        $language = "diff";
+        $geshi = new GeSHi($source, $language);
+        $geshi->enable_line_numbers(GESHI_NORMAL_LINE_NUMBERS);
+        
         echo "<div class=\"gitcode\">\n";
-        echo highlight_code(implode("\n",$out));
+        echo $geshi->parse_code();
         echo "</div>\n";
     }
 
@@ -213,8 +234,8 @@
     }
 
     function html_desc($repo)    {
-        
-        $desc = file_get_contents("$repo/description"); 
+        $path = get_git($repo);
+        $desc = file_get_contents("{$path}/description"); 
         $owner = get_file_owner($repo);
         $last =  get_last($repo);
 
@@ -225,19 +246,23 @@
         echo "</table>\n";
     }
 
-    function html_home()    {
-
+    function html_home() {
         global $repos; 
         echo "<table>\n";
         echo "<tr><th>Project</th><th>Description</th><th>Owner</th><th>Last Changed</th><th>Download</th></tr>\n";
         foreach ($repos as $repo)   {
-            $desc = short_desc(file_get_contents("$repo/description")); 
+          $path = get_git($repo);
+          if($path) {
+            $desc = short_desc(file_get_contents("{$path}/description")); 
             $owner = get_file_owner($repo);
             $last =  get_last($repo);
             $proj = get_project_link($repo);
             $dlt = get_project_link($repo, "targz");
             $dlz = get_project_link($repo, "zip");
             echo "<tr><td>$proj</td><td>$desc</td><td>$owner</td><td>$last</td><td>$dlt | $dlz</td></tr>\n";
+          } else {
+            echo "<tr style='color:red;'><td>{$repo}/description</td><td> Not Found </td><td> - </td><td> - </td><td>- | -</td></tr>\n";
+          }
         }
         echo "</table>";
     }
@@ -252,10 +277,8 @@
             echo "<head>\n";
             echo "\t<title>$title</title>\n";
             echo "\t<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\"/>\n";
-            echo "\t<link href=\"prettify.css\" type=\"text/css\" rel=\"stylesheet\" />\n";
-            echo "\t<script type=\"text/javascript\" src=\"prettify.js\"></script>\n";
             echo "</head>\n";
-            echo "<body onload=\"prettyPrint()\">\n";
+            echo "<body>\n";
         }
         /* Add rss2 link */
         if (isset($_GET['p']))  {
@@ -315,20 +338,22 @@
         return git_tree($gitdir, "HEAD");
     }
 
-    function git_tree($gitdir, $tree) {
-
+    function git_tree($repo, $tree) {
+        $gitdir = get_git($repo);
+        
         $out = array();
-        $command = "GIT_DIR=$gitdir git-ls-tree --name-only $tree";
+        $command = "GIT_DIR=$gitdir git ls-tree --name-only $tree";
+        
         exec($command, &$out);
     }
 
     function get_git($repo) {
-
-        if (file_exists("$repo/.git"))
-            $gitdir = "$repo/.git";
-        else
-            $gitdir = $repo;
-        return $gitdir;
+      if (file_exists("{$repo}/.git")) {
+        $gitdir = "{$repo}/.git";
+      } else {
+        $gitdir = $repo;
+      }
+      return $gitdir;
     }
 
     function get_file_owner($path)  {
@@ -342,7 +367,12 @@
 
     function get_last($repo)    {
         $out = array();
+        $repo = get_git($repo);
+        
         $date = exec("GIT_DIR=$repo git-rev-list  --header --max-count=1 HEAD | grep -a committer | cut -f5-6 -d' '", &$out);
+        if(count($out) == 0) {
+          $date = exec("GIT_DIR=$repo git rev-list  --header --max-count=1 HEAD | grep -a committer | cut -f5-6 -d' '", &$out);
+        }
         return date("D n/j/y G:i", (int)$date);
     }
 
@@ -360,11 +390,16 @@
         $out = array();
         $commit = array();
 
-        if (strlen($cid) <= 0)
+        if (strlen($cid) <= 0) {
             return 0;
-
+        }
+        $repo = get_git($repo);
+        
         exec("GIT_DIR=$repo git-rev-list  --header --max-count=1 $cid", &$out);
-
+        if(count($out) == 0) {
+          exec("GIT_DIR=$repo git rev-list  --header --max-count=1 $cid", &$out);
+        }
+        
         $commit["commit_id"] = $out[0];
         $g = explode(" ", $out[1]);
         $commit["tree"] = $g[1];
@@ -402,8 +437,12 @@
             
         $out = array();
         //Have to strip the \t between hash and file
-        exec("GIT_DIR=$repo git-ls-tree $tree | sed -e 's/\t/ /g'", &$out);
-
+        exec("GIT_DIR=$repo/.git git-ls-tree $tree | sed -e 's/\t/ /g'", &$out);
+        if(count($out) == 0) {
+          unset($out);
+          exec("GIT_DIR=$repo/.git git ls-tree $tree | sed -e 's/\t/ /g'", &$out);
+        }
+        
         foreach ($out as $line) {
             $entry = array();
             $arr = explode(" ", $line);
@@ -443,10 +482,10 @@
     function write_plain()  {
         $repo = get_repo_path($_GET['p']);
         $hash = $_GET['h'];
-        header("Content-Type: text/plain");
-        $str = system("GIT_DIR=$repo git-cat-file blob $hash");
+        //header("Content-Type: text/plain");
+        $str = system("GIT_DIR=$repo git cat-file blob $hash");
         echo $str;
-        die();
+        //die();
     }
 
     function write_targz($repo) {
@@ -665,10 +704,13 @@
 
         //strip the PHP tags if they were added by the script
         if($add_tags) {
-            
             $code = substr($code, 0, 26).substr($code, 36, (strlen($code) - 74));
         }
-
+        
+        if(substr($code, 0, 1) == ">") {
+          $code = substr($code, 1, strlen($code));
+        }
+        
         return $code;
     }
 
